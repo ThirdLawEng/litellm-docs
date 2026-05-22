@@ -206,6 +206,13 @@ const config = {
 
   // Algolia search comes from preset-classic when themeConfig.algolia is set.
   themes: ['@docusaurus/theme-mermaid'],
+
+  clientModules: [
+    // Ensures the Algolia DocSearch modal's input is focused when the modal
+    // opens (works around a race between React's autoFocus and other
+    // focus-stealing scripts after the modal portal is inserted).
+    require.resolve('./src/clientModules/algoliaSearchAutofocus.js'),
+  ],
   markdown: {
     mermaid: true,
   },
