@@ -102,17 +102,13 @@ $ uv tool install 'litellm[proxy]'
 
 <TabItem value="docker-compose" label="Docker Compose (Proxy + DB)">
 
-Docker Compose bundles LiteLLM with a Postgres database. Follow the steps below — the proxy will be fully running by the end.
+Docker Compose bundles LiteLLM with a Postgres database. The stack runs two separate services — `gateway` (the LLM API proxy on port 4000) and `ui` (the admin dashboard on port 3000) — so you can scale and update each independently.
 
-### Step 1 — Pull the LiteLLM database image
-
-LiteLLM provides a dedicated `litellm-database` image for proxy deployments that connect to Postgres.
+### Step 1 — Get `docker-compose.yml`
 
 ```bash
-docker pull ghcr.io/berriai/litellm-database:main-latest
+curl -O https://raw.githubusercontent.com/BerriAI/litellm/main/docker-compose.yml
 ```
-
-See all available tags on the [GitHub Container Registry](https://github.com/BerriAI/litellm/pkgs/container/litellm-database).
 
 ---
 
@@ -120,12 +116,9 @@ See all available tags on the [GitHub Container Registry](https://github.com/Ber
 
 Complete all three config files **before** running `docker compose up`. The proxy server will not start correctly if any of these are missing.
 
-#### 2.1 — Get `docker-compose.yml` and create `.env`
+#### 2.1 — Create `.env`
 
 ```bash
-# Get the docker compose file
-curl -O https://raw.githubusercontent.com/BerriAI/litellm/main/docker-compose.yml
-
 # Add the master key - you can change this after setup
 echo 'LITELLM_MASTER_KEY="sk-1234"' > .env
 
@@ -173,14 +166,14 @@ global:
 scrape_configs:
   - job_name: "litellm"
     static_configs:
-      - targets: ["litellm:4000"]
+      - targets: ["gateway:4000"]
 ```
 
 Also verify that the `config.yaml` volume mount and `--config` flag are **not commented out** in `docker-compose.yml`:
 
 ```yaml
 services:
-  litellm:
+  gateway:
     volumes:
       - ./config.yaml:/app/config.yaml # ✅ must be uncommented
     command:
@@ -193,15 +186,15 @@ All three files (`.env`, `config.yaml`, `prometheus.yml`) must be present before
 
 ---
 
-### Step 3 — Start the proxy server and test it
+### Step 3 — Start the services and test
 
-After `config.yaml`, `prometheus.yml`, and `.env` are complete, start the proxy:
+After `config.yaml`, `prometheus.yml`, and `.env` are complete, start the stack:
 
 ```bash
 docker compose up
 ```
 
-Once running, test it with a curl request:
+Once running, test the gateway with a curl request:
 
 ```bash
 curl -X POST 'http://0.0.0.0:4000/chat/completions' \
@@ -256,7 +249,7 @@ curl -X POST 'http://0.0.0.0:4000/chat/completions' \
 
 ### Optional — Navigate to the LiteLLM UI and generate a virtual key
 
-Open [http://localhost:4000/ui](http://localhost:4000/ui) in your browser and log in with your master key (`sk-1234`).
+Open [http://localhost:3000/ui](http://localhost:3000/ui) in your browser and log in with your master key (`sk-1234`).
 
 Navigate to **Virtual Keys** and click **+ Create New Key**:
 
@@ -769,12 +762,12 @@ Error: cannot create subdirectories in ".../prometheus.yml": not a directory
 Docker created `prometheus.yml` as an **empty directory** instead of a file. This happens when the file is missing at `docker compose up` time.
 
 Fix it:
-Then create the file (see [Step 2.3 — Create `prometheus.yml`](#23--create-prometheusyml)) and run `docker compose up` again.
+
 ```bash
 rm -rf prometheus.yml
 ```
 
-Then create the file (see [Step 2.4](#step-24--create-prometheusyml)) and run `docker compose up` again.
+Then create the file (see [Step 2.3 — Create `prometheus.yml`](#23--create-prometheusyml)) and run `docker compose up` again.
 
 ### Non-root docker image?
 
