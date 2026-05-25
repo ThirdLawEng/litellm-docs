@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-label="Image placeholder">
+  <rect width="1200" height="600" fill="#0f172a"/>
+  <rect x="24" y="24" width="1152" height="552" fill="none" stroke="#334155" stroke-width="3" stroke-dasharray="14 10" rx="18"/>
+  <text x="600" y="250" font-family="monospace" font-size="38" font-weight="bold" fill="#38bdf8" text-anchor="middle">IMAGE PLACEHOLDER</text>
+  <text x="600" y="312" font-family="sans-serif" font-size="24" fill="#cbd5e1" text-anchor="middle">Time-to-first-token at p50 / p95 / p99</text>
+  <text x="600" y="350" font-family="sans-serif" font-size="24" fill="#cbd5e1" text-anchor="middle">baseline vs optimized (lower is better)</text>
+</svg>
