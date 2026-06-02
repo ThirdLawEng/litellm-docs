@@ -299,19 +299,6 @@ module "litellm" {
 }
 ```
 
-:::warning Upgrading an existing deployment
-
-If you first deployed by running terraform from the stack root directly (before
-the module-first layout), the new `examples/default/` entry point shifts every
-resource address under a `module.litellm.` prefix. Run `terraform state mv` to
-re-key your state **before** applying — otherwise terraform plans a full
-destroy-and-recreate of the stack. See the migration section in the
-[AWS](https://github.com/BerriAI/litellm/tree/main/terraform/litellm/aws#migrating-an-existing-deployment)
-/ [GCP](https://github.com/BerriAI/litellm/tree/main/terraform/litellm/gcp#migrating-an-existing-deployment)
-README.
-
-:::
-
 See each stack's README for the full variable surface, TLS setup, multi-tenant
 patterns, and image-pull configuration.
 
