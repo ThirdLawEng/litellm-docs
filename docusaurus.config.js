@@ -344,6 +344,10 @@ const config = {
       swcHtmlMinimizer: true,
       lightningCssMinimizer: true,
       mdxCrossCompilerCache: true,
+      // Use the Rust-based rspack bundler instead of webpack. Essential for
+      // many-version builds: rspack uses a fraction of webpack's memory, which
+      // otherwise OOMs (>8GB heap) when bundling dozens of doc versions.
+      rspackBundler: true,
     },
   },
 
