@@ -222,7 +222,7 @@
             },
             {
               "type": "link",
-              "label": "All Supported Endpoints →",
+              "label": "All Supported Endpoints \u2192",
               "href": "https://docs.litellm.ai/docs/supported_endpoints"
             }
           ]
@@ -397,7 +397,6 @@
           "items": [
             "proxy/users",
             "proxy/team_budgets",
-            "project_management",
             "proxy/ui_team_soft_budget_alerts",
             "proxy/tag_budgets",
             "proxy/customers",
@@ -1048,7 +1047,7 @@
         "migration_policy",
         {
           "type": "category",
-          "label": "❤️ 🚅 Projects built on LiteLLM",
+          "label": "\u2764\ufe0f \ud83d\ude85 Projects built on LiteLLM",
           "link": {
             "type": "generated-index",
             "title": "Projects built on LiteLLM",

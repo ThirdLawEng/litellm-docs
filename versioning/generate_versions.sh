@@ -82,5 +82,10 @@ python3 versioning/link_escaping_siblings.py
 echo ">> restoring historical images removed from img/"
 python3 versioning/fill_missing_images.py || true
 
+# Prune dangling doc refs from versioned sidebars (transient historical states
+# where sidebars.js referenced a doc not present at the mapped commit).
+echo ">> sanitizing versioned sidebars"
+python3 versioning/sanitize_sidebars.py
+
 echo ">> done. versions.json:"
 cat versions.json 2>/dev/null || echo "(none)"
