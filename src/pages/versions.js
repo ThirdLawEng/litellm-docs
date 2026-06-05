@@ -5,40 +5,54 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import manifest from '@site/versioning/manifest.json';
 
 // Manifest is oldest-first; show newest first.
-const ALL_VERSIONS = (manifest.versions || []).slice().reverse();
+const ALL = (manifest.versions || []).slice().reverse();
 
 export default function Versions() {
   const {siteConfig} = useDocusaurusContext();
   const {
-    docsArchiveUrl = '',
-    buildAllVersions = false,
-    builtReleasedVersions = [],
+    builtVersions = [],
+    defaultVersion = null,
     currentDocsPath = '/docs/',
   } = siteConfig.customFields || {};
+  const built = new Set(builtVersions);
 
-  const builtSet = new Set(builtReleasedVersions);
-  const archive = String(docsArchiveUrl).replace(/\/$/, '');
+  const urlFor = (v) => {
+    if (!built.has(v)) return null;
+    return v === defaultVersion ? '/docs/' : `/docs/${v}/`;
+  };
 
-  // Same-origin link if this version is rendered in this build; otherwise the
-  // static archive (or a same-origin /docs/<v>/ rewrite when no archive URL set).
-  const urlFor = (version) =>
-    buildAllVersions || builtSet.has(version)
-      ? `/docs/${version}/`
-      : `${archive}/docs/${version}/`;
+  const stable = ALL.filter((v) => v.channel !== 'rc');
+  const rc = ALL.filter((v) => v.channel === 'rc');
 
-  const latest = ALL_VERSIONS[0] && ALL_VERSIONS[0].version;
+  const Row = ({v}) => {
+    const url = urlFor(v.version);
+    return (
+      <tr key={v.version}>
+        <th>
+          {v.version}
+          {v.version === defaultVersion && (
+            <span className="badge badge--primary" style={{marginLeft: 8}}>
+              latest
+            </span>
+          )}
+        </th>
+        <td>{(v.pypi_published || '').slice(0, 10)}</td>
+        <td>{url ? <Link to={url}>Documentation</Link> : <em>not built</em>}</td>
+      </tr>
+    );
+  };
 
   return (
     <Layout
       title="Documentation versions"
-      description="Browse LiteLLM documentation for every released pip version.">
+      description="Browse LiteLLM documentation for each stable release.">
       <main className="container margin-vert--lg">
         <h1>LiteLLM documentation versions</h1>
         <p>
-          Each version below matches a published <code>litellm</code> pip
-          release. Check your installed version with{' '}
-          <code>litellm --version</code> (or <code>pip show litellm</code>) and
-          open the matching docs.
+          Each version below matches a stable <code>litellm</code> release. Check
+          your installed version with <code>litellm --version</code> (or{' '}
+          <code>pip show litellm</code>) and open the matching docs. The latest
+          stable is the default at <Link to="/docs/">/docs</Link>.
         </p>
 
         <h2>Current</h2>
@@ -54,7 +68,27 @@ export default function Versions() {
           </tbody>
         </table>
 
-        <h2>Released versions ({ALL_VERSIONS.length})</h2>
+        {rc.length > 0 && (
+          <>
+            <h2>Release candidate</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Version</th>
+                  <th>Published</th>
+                  <th>Docs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rc.map((v) => (
+                  <Row key={v.version} v={v} />
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        <h2>Stable versions ({stable.length})</h2>
         <table>
           <thead>
             <tr>
@@ -64,35 +98,16 @@ export default function Versions() {
             </tr>
           </thead>
           <tbody>
-            {ALL_VERSIONS.map((v) => (
-              <tr key={v.version}>
-                <th>
-                  {v.version}
-                  {v.version === latest && (
-                    <span className="badge badge--primary" style={{marginLeft: 8}}>
-                      latest
-                    </span>
-                  )}
-                </th>
-                <td>{(v.pypi_published || '').slice(0, 10)}</td>
-                <td>
-                  {/* external/archive links use a plain anchor to avoid SPA routing */}
-                  {urlFor(v.version).startsWith('http') ? (
-                    <a href={urlFor(v.version)}>Documentation</a>
-                  ) : (
-                    <Link to={urlFor(v.version)}>Documentation</Link>
-                  )}
-                </td>
-              </tr>
+            {stable.map((v) => (
+              <Row key={v.version} v={v} />
             ))}
           </tbody>
         </table>
 
         <p style={{marginTop: '2rem'}}>
           <small>
-            Historical versions are reconstructed from the documentation as it
-            existed when each release was published, and are served from a static
-            archive built by CI. See{' '}
+            Versions are reconstructed from the documentation as it existed when
+            each release was published; see{' '}
             <a href="https://github.com/BerriAI/litellm-docs/blob/main/versioning/README.md">
               versioning/README.md
             </a>{' '}

@@ -1,128 +1,92 @@
 # Docs versioning
 
-This directory contains the tooling that backfills **Docusaurus versioned docs**
-for LiteLLM, so users can read the documentation as it existed for the specific
-`litellm` pip version they have installed.
+Versioned LiteLLM docs, so users can read the documentation for the specific
+stable `litellm` release they're running.
 
 - Check your version: `litellm --version` (or `pip show litellm`).
-- Browse all versions: **/versions**.
-- The newest release is served at `/docs/`; the unversioned working tree (`docs/`)
-  is published as **main** at `/docs/main/` with an "unreleased" banner; older
-  versions show an "unmaintained" banner.
+- Browse all versions: **/versions**. The latest stable is the default at `/docs/`.
+- The unversioned working tree is **main** at `/docs/main/` (unreleased banner);
+  the latest rc gets an unreleased banner; older stables get an "unmaintained" banner.
 
 ## What gets versioned
 
-- **Range:** every *final* `X.Y.Z` pip release from `1.79.0` (2025-10-26) through
-  the latest stable (`floor_version` in `manifest.json`). Pre-releases
-  (`.devN`, `rcN`, `postN`) are excluded — they are not `pip install` targets in
-  production.
-- **Scope:** the entire `docs/` tree. `release_notes/` and `blog/` are
-  intentionally **not** versioned — they are already chronological.
+**Stable releases only**, from the 1.83.x line onward, plus the latest rc:
 
-## Build & hosting architecture (important)
+- **1.83.x line** → only the releases promoted to `-stable` (1.83.3, 1.83.7,
+  1.83.10, 1.83.14), labeled with a `-stable` suffix (e.g. `1.83.10-stable`).
+- **1.84.0+** → every final semver release (the move to PEP 440 / semver means
+  each final `X.Y.Z` is the stable release), labeled as-is.
+- **latest rc** → the single most recent release candidate (e.g. `1.88.0rc3`),
+  the only pre-release included.
 
-Docusaurus re-renders **every** version on **every** build, but the 73 backfilled
-snapshots are *frozen* — they never change. Rebuilding them on every PR makes the
-merge-gating build blow past Vercel's 45-minute limit. So the build is split:
+Scope: the entire `docs/` tree. `release_notes/` and `blog/` are not versioned.
 
-| Build | What it renders | Where | Speed |
-| --- | --- | --- | --- |
-| **Vercel** (every PR + production) | **current docs only** | docs.litellm.ai | fast (~minutes) |
-| **CI archive** (`.github/workflows/build-docs-archive.yml`) | **all versions** | GitHub Pages (or custom domain) | slow, but off the merge path & no 45-min cap |
+## How it's built (important)
 
-This is controlled by `DOCS_VERSIONS_BUILD_LIMIT` (read in `docusaurus.config.js`):
+The version snapshots are **derived artifacts** — they are NOT committed. They are
+regenerated from git history at build time:
 
-- `current` **(default)** — current docs only. This is what Vercel runs.
-- `all` — every version. This is what the CI archive workflow runs.
-- `<N>` — current + the latest N released versions (e.g. `20`).
+```
+npm run build
+  └─ prebuild: versioning/prepare-snapshots.sh   (regenerates versioned_docs/ from manifest + git history)
+  └─ build:    docusaurus build                  (renders current + all versions)
+```
 
-The live site's version dropdown and `/versions` page link frozen versions to the
-archive via **`DOCS_ARCHIVE_URL`**.
+This keeps the repo clean (only the ~small `manifest.json` is committed) and means
+the live build renders the versions directly — there's no separate archive to host.
+With ~two dozen stable versions the build stays well under typical CI/Vercel limits.
 
-### One-time setup
+`DOCS_VERSIONS_BUILD_LIMIT` controls how many versions a build renders:
 
-1. **Enable GitHub Pages** for this repo (Settings → Pages → Source: GitHub
-   Actions). The workflow `build-docs-archive.yml` deploys there. It builds with
-   `DOCS_SITE_URL=https://<owner>.github.io` and `DOCS_BASE_URL=/<repo>/`; for a
-   custom domain (e.g. `archive.docs.litellm.ai`) set those to the domain with
-   `DOCS_BASE_URL=/` instead.
-2. **On Vercel**, set env var `DOCS_ARCHIVE_URL` to the archive's base URL
-   (e.g. `https://berriai.github.io/litellm-docs`). The default Vercel build stays
-   `current`-only — no other change needed.
-3. *(Optional)* To keep old-version URLs on `docs.litellm.ai`, add a Vercel
-   rewrite proxying `/docs/:v(\d+\.\d+\.\d+)/:path*` to the archive host instead
-   of linking cross-origin.
+- `all` **(default)** — every stable version + latest rc + main.
+- `current` — current docs only (fast preview; no snapshots).
+- `<N>` — main + the latest N versions.
 
-The archive is **noindexed** (`DOCS_ARCHIVE_BUILD=1` → `noIndex`) and its old
-versions carry `canonical` links back to the live site, so it never competes with
-docs.litellm.ai in search.
+> **Hosts that shallow-clone:** `prepare-snapshots.sh` deepens git history as
+> needed to reach each version's source commit. If history/python/git aren't
+> available it logs a warning and the build falls back to current-docs-only
+> rather than failing.
 
-## How the version→commit mapping works (and its caveat)
+## Version → commit mapping (and its caveat)
 
-This docs repo has **no release tags** (pip releases are tagged in `berriai/litellm`).
-We map each release to a docs commit by **publish date**:
+This docs repo has no release tags (pip releases are tagged in `berriai/litellm`).
+Each release is mapped to a docs commit by **publish date**:
 
 ```
 git rev-list -1 --before="<PyPI upload timestamp>" origin/main
 ```
 
-i.e. the last `main` commit that existed when the release was published on PyPI.
-
-> **Caveat — best effort.** Documentation edits that landed shortly *after* a
-> release was cut are attributed to the *next* version. A snapshot therefore
-> reflects "the docs as of the release date", not a tag-exact correspondence.
-> Same-day releases may share a source commit. See `manifest.json` for the exact
-> commit each version maps to.
+> **Best effort.** Docs edits that landed shortly *after* a release are attributed
+> to the next version; same-day releases may share a source commit. See
+> `manifest.json` for the exact commit each version maps to.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `build_manifest.py` | Builds `manifest.json`: for each final release ≥ floor, resolves the source commit via the date mapping above. |
-| `manifest.json` | Generated source of truth: `version`, `pypi_published`, `source_commit`, `source_commit_date`. |
-| `generate_versions.sh` | Materializes each version's historical `docs/` + `sidebars.js` and runs `docusaurus docs:version` to snapshot it; then links sibling dirs, restores missing images, and sanitizes sidebars. |
-| `link_escaping_siblings.py` | Symlinks repo-root siblings (img/src/static) into `versioned_docs/` so relative refs that escape the docs tree resolve across versions. |
+| `build_manifest.py` | Selects the stable release set (+ latest rc) and maps each to a source commit. Writes `manifest.json`. |
+| `manifest.json` | Committed source of truth: `version` (doc label), `pip_version`, `channel`, `pypi_published`, `source_commit`. |
+| `prepare-snapshots.sh` | npm `prebuild` hook: regenerates snapshots at build time (deepens history as needed; degrades gracefully). |
+| `generate_versions.sh` | Materializes each version's historical `docs/` + `sidebars.js` and runs `docusaurus docs:version`; links sibling dirs, restores missing images, sanitizes sidebars. |
+| `link_escaping_siblings.py` | Symlinks repo-root siblings (img/src/static) into `versioned_docs/` so escaping relative refs resolve. |
 | `fill_missing_images.py` | Restores images referenced by old snapshots but since removed from `img/`. |
-| `sanitize_sidebars.py` | Removes versioned-sidebar references to doc ids absent from a snapshot (transient historical states). |
-| `graceful-fs-preload.js` | Preloaded via `NODE_OPTIONS` in the build script; bounds concurrent file ops so many-version builds don't hit EMFILE on low-ulimit hosts. |
+| `sanitize_sidebars.py` | Removes versioned-sidebar refs to doc ids absent from a snapshot. |
+| `graceful-fs-preload.js` | Bounds concurrent file ops so many-version builds don't hit EMFILE on low-ulimit hosts. |
 
-## Regenerating (reproducible)
+## Regenerating / updating
 
 ```bash
-# 1. Refresh the manifest from PyPI + git history (needs full history of origin/main).
-git fetch --unshallow origin main   # if the clone is shallow
+# Refresh the manifest from PyPI + git history (needs full history of origin/main).
+git fetch --unshallow origin main   # if shallow
 python3 versioning/build_manifest.py
 
-# 2. Regenerate all versioned_docs / versioned_sidebars / versions.json from scratch.
+# Regenerate snapshots locally (optional; CI/build does this automatically).
 versioning/generate_versions.sh --reset
 
-# 3. Validate the full archive build locally (needs ~12GB heap).
-DOCS_VERSIONS_BUILD_LIMIT=all NODE_OPTIONS="--require ./versioning/graceful-fs-preload.js --max-old-space-size=12288" npm run build
+# Build.
+npm run build
 ```
 
-`generate_versions.sh --reset` is idempotent: a clean re-run reproduces an
-identical `versioned_docs/` tree, `versioned_sidebars/`, and `versions.json`.
-Git stores the snapshot blobs once (they are identical to existing history), so
-committing them adds negligible pack size despite the large working tree.
-
-To regenerate only a subset (e.g. for a quick build check):
-
-```bash
-versioning/generate_versions.sh --reset --only "1.79.0 1.85.0 1.87.1"
-```
-
-## Adding a version for a new release (going forward)
-
-Automation is intentionally deferred. After a new pip release, either re-run the
-full regeneration above, or add just the new version:
-
-```bash
-# map + snapshot the single new release, then sanitize
-python3 versioning/build_manifest.py
-versioning/generate_versions.sh --only "<new-version>"
-git add versions.json versioned_docs versioned_sidebars && git commit -m "docs: add version <new-version>"
-```
-
-Pushing to `main` triggers the CI archive workflow (it watches `versioned_docs/`
-& `versions.json`), which rebuilds and republishes the archive. Vercel builds stay
-fast because they never render the snapshots.
+For new releases, `build_manifest.py` automatically picks up new 1.84.0+ finals
+and the latest rc from PyPI, so re-running it refreshes the set. The 1.83.x
+`-stable` list is fixed (that line is closed).
