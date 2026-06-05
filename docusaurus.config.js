@@ -3,6 +3,22 @@
 
 require('dotenv').config();
 
+const fs = require('fs');
+
+// Docs versioning: the list of backfilled pip-release versions (newest first)
+// is produced by `versioning/generate_versions.sh` and recorded in versions.json.
+// When present, the newest version becomes the default served at /docs/ and the
+// unversioned working tree ("current") is exposed as the in-development "main".
+// When absent (e.g. a fresh checkout before backfill), the site builds normally
+// with no versioning so this config degrades gracefully.
+let docsVersions = [];
+try {
+  docsVersions = JSON.parse(fs.readFileSync(__dirname + '/versions.json', 'utf8'));
+} catch (e) {
+  docsVersions = [];
+}
+const hasDocsVersions = Array.isArray(docsVersions) && docsVersions.length > 0;
+
 // @ts-ignore
 const lightCodeTheme = require('prism-react-renderer/themes/vsLight');
 // @ts-ignore
@@ -87,6 +103,13 @@ const config = {
   },
   plugins: [
     require('./plugins/optimize-images'),
+    // Adds <meta name="robots" content="noindex"> + a canonical link to the
+    // latest equivalent page on every non-latest docs version (old pip versions
+    // and the in-development "main"). Prevents duplicate-content SEO dilution
+    // across ~73 versions and keeps crawlers / Inkeep scoped to the latest docs.
+    ...(hasDocsVersions
+      ? [[require('./plugins/versioned-seo'), {}]]
+      : []),
     ...(hasInkeepSearch
       ? [
           [
@@ -258,6 +281,22 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           remarkPlugins: [require('./src/remark/raw-markdown')],
+          // When versions have been backfilled, serve the newest pip release at
+          // /docs/ (the default) and expose the unversioned working tree as the
+          // in-development "main" at /docs/main/ with an "unreleased" banner.
+          // Older versions automatically get the "unmaintained" banner.
+          ...(hasDocsVersions
+            ? {
+                lastVersion: docsVersions[0],
+                versions: {
+                  current: {
+                    label: 'main 🚧',
+                    path: 'main',
+                    banner: 'unreleased',
+                  },
+                },
+              }
+            : {}),
         },
         blog: false, // Disable the default blog plugin from preset-classic
         pages: {},
@@ -325,6 +364,18 @@ const config = {
           },
           { to: '/release_notes', label: 'Changelog', position: 'left' },
           { to: '/blog', label: 'Blog', position: 'left' },
+          ...(hasDocsVersions
+            ? [
+                {
+                  type: 'docsVersionDropdown',
+                  position: 'right',
+                  dropdownItemsAfter: [
+                    { to: '/versions', label: 'All versions →' },
+                  ],
+                  dropdownActiveClassDisabled: true,
+                },
+              ]
+            : []),
           {
             href: 'https://docs.litellm-agent-platform.ai/',
             label: 'LiteLLM Agent Platform',

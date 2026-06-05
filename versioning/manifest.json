@@ -1,0 +1,446 @@
+{
+  "floor_version": "1.79.0",
+  "branch": "origin/main",
+  "count": 73,
+  "latest_version": "1.87.1",
+  "versions": [
+    {
+      "version": "1.79.0",
+      "pypi_published": "2025-10-26T01:20:51.750447Z",
+      "source_commit": "1264b077c04c535cf6f7e34fdcc51d1bb29b81b1",
+      "source_commit_date": "2025-10-25T18:04:04-07:00"
+    },
+    {
+      "version": "1.79.1",
+      "pypi_published": "2025-11-01T19:22:01.637554Z",
+      "source_commit": "9d26cbcb0530eccfd56ccbdb8a0d8fe70a09f41b",
+      "source_commit_date": "2025-11-01T12:09:11-07:00"
+    },
+    {
+      "version": "1.79.2",
+      "pypi_published": "2025-11-08T23:59:05.165828Z",
+      "source_commit": "94a24978c9bc5c1256ae7ec8e37dbd3247755054",
+      "source_commit_date": "2025-11-08T12:38:57-08:00"
+    },
+    {
+      "version": "1.79.3",
+      "pypi_published": "2025-11-09T02:33:14.021364Z",
+      "source_commit": "ea3c758bac0f7321be6baa0b49c774f6dbab7041",
+      "source_commit_date": "2025-11-08T18:15:52-08:00"
+    },
+    {
+      "version": "1.80.0",
+      "pypi_published": "2025-11-16T00:03:49.182797Z",
+      "source_commit": "2960890dca187444b81e98f71d6d5c4ba590d4b9",
+      "source_commit_date": "2025-11-15T15:36:05-08:00"
+    },
+    {
+      "version": "1.80.5",
+      "pypi_published": "2025-11-22T23:41:39.923639Z",
+      "source_commit": "7cf7bdd8bd1c2efd8336cbea99c93f30000a01b4",
+      "source_commit_date": "2025-11-22T14:11:13-08:00"
+    },
+    {
+      "version": "1.80.6",
+      "pypi_published": "2025-11-27T18:17:44.700515Z",
+      "source_commit": "5e64ac4fa3bf481934a433c581e69841554b2eca",
+      "source_commit_date": "2025-11-27T09:47:26-08:00"
+    },
+    {
+      "version": "1.80.7",
+      "pypi_published": "2025-11-27T23:03:50.002541Z",
+      "source_commit": "4d6a7a96df9c15376b0997b8529520cd5f9a2eb4",
+      "source_commit_date": "2025-11-27T13:08:03-08:00"
+    },
+    {
+      "version": "1.80.8",
+      "pypi_published": "2025-12-07T01:15:16.960893Z",
+      "source_commit": "ed6218d06d5c61ae70b1ef6c498c61832d73b026",
+      "source_commit_date": "2025-12-06T16:09:27-08:00"
+    },
+    {
+      "version": "1.80.9",
+      "pypi_published": "2025-12-08T21:04:57.493331Z",
+      "source_commit": "a38cee18f90afb2c8d365d4b5b35548fe2f38cbb",
+      "source_commit_date": "2025-12-08T12:58:21-08:00"
+    },
+    {
+      "version": "1.80.10",
+      "pypi_published": "2025-12-14T02:07:02.414452Z",
+      "source_commit": "e736c0e6354a0779ddf9bb698043da25e9fbb42f",
+      "source_commit_date": "2025-12-13T18:02:06-08:00"
+    },
+    {
+      "version": "1.80.11",
+      "pypi_published": "2025-12-22T12:47:26.469590Z",
+      "source_commit": "8dfcc39fb25eaecad02d73b4e11c0294f1fb54dd",
+      "source_commit_date": "2025-12-22T16:55:04+05:30"
+    },
+    {
+      "version": "1.80.12",
+      "pypi_published": "2026-01-07T17:50:30.776179Z",
+      "source_commit": "9021b0e00bd433d531c55ee1992582ef33abe500",
+      "source_commit_date": "2026-01-07T21:46:54+05:30"
+    },
+    {
+      "version": "1.80.13",
+      "pypi_published": "2026-01-09T04:37:05.551685Z",
+      "source_commit": "5f3c9f3e156e8ab1c018c861b63b478fc0c0e23d",
+      "source_commit_date": "2026-01-09T09:44:36+05:30"
+    },
+    {
+      "version": "1.80.15",
+      "pypi_published": "2026-01-11T18:31:41.670684Z",
+      "source_commit": "3d4be9b0cbafe73e281b13afd9109b899aadbebc",
+      "source_commit_date": "2026-01-10T16:41:54-08:00"
+    },
+    {
+      "version": "1.80.16",
+      "pypi_published": "2026-01-13T08:52:19.951056Z",
+      "source_commit": "d97895cd24bcd5e058d555eb152abc9a699d8138",
+      "source_commit_date": "2026-01-12T18:56:35-08:00"
+    },
+    {
+      "version": "1.80.17",
+      "pypi_published": "2026-01-17T02:08:00.562319Z",
+      "source_commit": "62eab4ae5d21942c479ad084c67b3b761dc3afb7",
+      "source_commit_date": "2026-01-16T16:41:44-08:00"
+    },
+    {
+      "version": "1.81.0",
+      "pypi_published": "2026-01-18T03:49:16.450126Z",
+      "source_commit": "9d38e0e99a7d93b10738063663478171ee9b7dab",
+      "source_commit_date": "2026-01-17T18:33:19-08:00"
+    },
+    {
+      "version": "1.81.1",
+      "pypi_published": "2026-01-21T12:55:55.613576Z",
+      "source_commit": "3e8cb2f82b81a686547f0315911ed2588810beab",
+      "source_commit_date": "2026-01-21T16:40:48+05:30"
+    },
+    {
+      "version": "1.81.3",
+      "pypi_published": "2026-01-25T02:45:55.887379Z",
+      "source_commit": "d957b81afbe7786f9060201202aeb90e64ddf88d",
+      "source_commit_date": "2026-01-24T16:26:28-08:00"
+    },
+    {
+      "version": "1.81.4",
+      "pypi_published": "2026-01-27T22:50:54.164816Z",
+      "source_commit": "1871f6c42767215dd0609dba05e1dd8343c41f2a",
+      "source_commit_date": "2026-01-27T14:45:26-08:00"
+    },
+    {
+      "version": "1.81.5",
+      "pypi_published": "2026-01-29T01:37:52.600155Z",
+      "source_commit": "038fc425fecce02ee288a123ef82258a3fcc46d9",
+      "source_commit_date": "2026-01-28T18:03:21+05:30"
+    },
+    {
+      "version": "1.81.6",
+      "pypi_published": "2026-02-01T04:02:23.704346Z",
+      "source_commit": "b745b5a5d4e2acfff53ff803d61e10b1d20d5100",
+      "source_commit_date": "2026-01-31T19:29:06-08:00"
+    },
+    {
+      "version": "1.81.7",
+      "pypi_published": "2026-02-03T19:43:08.035363Z",
+      "source_commit": "a825fece6a79b524ad36786bad58c95a234903f5",
+      "source_commit_date": "2026-02-03T17:08:01+05:30"
+    },
+    {
+      "version": "1.81.8",
+      "pypi_published": "2026-02-05T05:56:00.248312Z",
+      "source_commit": "d5da646e45cfab201d981eb812a328ecd01f0e5e",
+      "source_commit_date": "2026-02-04T18:39:51-08:00"
+    },
+    {
+      "version": "1.81.9",
+      "pypi_published": "2026-02-07T21:14:21.469983Z",
+      "source_commit": "48615023077240ad43609e45081bffe558a4eff2",
+      "source_commit_date": "2026-02-07T13:09:56+05:30"
+    },
+    {
+      "version": "1.81.10",
+      "pypi_published": "2026-02-11T00:17:43.431331Z",
+      "source_commit": "5c0817e8eae848b74197bb0c69ba0c575dc41e3d",
+      "source_commit_date": "2026-02-10T15:24:46-08:00"
+    },
+    {
+      "version": "1.81.11",
+      "pypi_published": "2026-02-13T01:35:35.745735Z",
+      "source_commit": "94868dca300caf3c11c999cd70f4fc6f3051405d",
+      "source_commit_date": "2026-02-13T06:11:03+05:30"
+    },
+    {
+      "version": "1.81.12",
+      "pypi_published": "2026-02-15T02:06:53.162702Z",
+      "source_commit": "7f1c297d93353d272350341eed17a73a8c499f16",
+      "source_commit_date": "2026-02-14T18:01:11-08:00"
+    },
+    {
+      "version": "1.81.13",
+      "pypi_published": "2026-02-17T02:00:44.220924Z",
+      "source_commit": "7676cbe0652567f6133829937c4cba789a4b8940",
+      "source_commit_date": "2026-02-16T20:27:36-05:00"
+    },
+    {
+      "version": "1.81.14",
+      "pypi_published": "2026-02-22T00:33:32.464432Z",
+      "source_commit": "1a2ad848e9060378c63f23a695d995b2ee630bbb",
+      "source_commit_date": "2026-02-21T16:05:27-08:00"
+    },
+    {
+      "version": "1.81.15",
+      "pypi_published": "2026-02-24T06:52:48.084426Z",
+      "source_commit": "0680a2fb1f11b54d29793855a8e4ab973e085daf",
+      "source_commit_date": "2026-02-23T21:04:40-08:00"
+    },
+    {
+      "version": "1.81.16",
+      "pypi_published": "2026-02-26T13:01:45.652912Z",
+      "source_commit": "59fc3c660ad63557b06d474fb22f2da2a6c0d4c1",
+      "source_commit_date": "2026-02-26T04:41:07-08:00"
+    },
+    {
+      "version": "1.82.0",
+      "pypi_published": "2026-03-01T02:35:26.844876Z",
+      "source_commit": "3a7ff196ae465cf15c61e7973242b1f89d7363eb",
+      "source_commit_date": "2026-02-28T18:15:26-08:00"
+    },
+    {
+      "version": "1.82.1",
+      "pypi_published": "2026-03-10T09:10:00.702127Z",
+      "source_commit": "b8826c40ed5200fe7780ced5db1f5a8dbdcc5afc",
+      "source_commit_date": "2026-03-09T15:39:27-07:00"
+    },
+    {
+      "version": "1.82.2",
+      "pypi_published": "2026-03-13T21:24:21.288471Z",
+      "source_commit": "90ccf46e25a2d98d980ea468a26675562db8e3e9",
+      "source_commit_date": "2026-03-13T11:01:40-07:00"
+    },
+    {
+      "version": "1.82.3",
+      "pypi_published": "2026-03-16T21:51:26.747375Z",
+      "source_commit": "d45a22ebbc3e33ff7aaee0a2837efa8c0e1f7e24",
+      "source_commit_date": "2026-03-17T02:40:46+05:30"
+    },
+    {
+      "version": "1.82.4",
+      "pypi_published": "2026-03-18T01:18:02.026068Z",
+      "source_commit": "dff4c50a3920337a8c2f2716fd0d5dc95edb76e3",
+      "source_commit_date": "2026-03-17T17:50:58-07:00"
+    },
+    {
+      "version": "1.82.5",
+      "pypi_published": "2026-03-21T00:03:48.870520Z",
+      "source_commit": "2e86c195047c79148808954b4a969fbbab5a9282",
+      "source_commit_date": "2026-03-21T00:14:33+05:30"
+    },
+    {
+      "version": "1.82.6",
+      "pypi_published": "2026-03-22T06:35:56.795579Z",
+      "source_commit": "324a9d129a314ee81b80e395ea3c1ea0be7d3b24",
+      "source_commit_date": "2026-03-21T15:57:28-07:00"
+    },
+    {
+      "version": "1.83.0",
+      "pypi_published": "2026-03-31T05:08:21.987889Z",
+      "source_commit": "8ceaf6111f2f5f5746fff574c45b2d44335ecb33",
+      "source_commit_date": "2026-03-30T21:55:03-07:00"
+    },
+    {
+      "version": "1.83.1",
+      "pypi_published": "2026-04-03T04:46:13.074667Z",
+      "source_commit": "c165c8f25db3b94fbecfa9ff8336c96651a7464d",
+      "source_commit_date": "2026-04-02T16:38:01-07:00"
+    },
+    {
+      "version": "1.83.2",
+      "pypi_published": "2026-04-04T01:04:21.561431Z",
+      "source_commit": "c2b9d2f2d1972a2af3c2e34316c93f979ccc04f3",
+      "source_commit_date": "2026-04-03T16:07:46-07:00"
+    },
+    {
+      "version": "1.83.3",
+      "pypi_published": "2026-04-05T00:54:05.530249Z",
+      "source_commit": "c2c26551a488b0106ba7323a28a37049d1ed2ec6",
+      "source_commit_date": "2026-04-04T16:23:21-07:00"
+    },
+    {
+      "version": "1.83.4",
+      "pypi_published": "2026-04-07T04:33:44.268307Z",
+      "source_commit": "d1a829dbef84c359fe0e5c0f524c1e58bb4c96d2",
+      "source_commit_date": "2026-04-06T19:11:55-07:00"
+    },
+    {
+      "version": "1.83.5",
+      "pypi_published": "2026-04-13T17:27:32.287830Z",
+      "source_commit": "d9e60433c1bece3652667b9ea2f4b85b9be8ff6e",
+      "source_commit_date": "2026-04-13T09:08:57-07:00"
+    },
+    {
+      "version": "1.83.6",
+      "pypi_published": "2026-04-13T17:31:19.443430Z",
+      "source_commit": "d9e60433c1bece3652667b9ea2f4b85b9be8ff6e",
+      "source_commit_date": "2026-04-13T09:08:57-07:00"
+    },
+    {
+      "version": "1.83.7",
+      "pypi_published": "2026-04-13T17:34:58.360830Z",
+      "source_commit": "d9e60433c1bece3652667b9ea2f4b85b9be8ff6e",
+      "source_commit_date": "2026-04-13T09:08:57-07:00"
+    },
+    {
+      "version": "1.83.8",
+      "pypi_published": "2026-04-15T03:37:47.934409Z",
+      "source_commit": "fba59156d8f4831ab87aa89a65921f645a509da3",
+      "source_commit_date": "2026-04-14T19:51:54-07:00"
+    },
+    {
+      "version": "1.83.9",
+      "pypi_published": "2026-04-17T01:29:04.725988Z",
+      "source_commit": "8043d5a52ec0bf5adc9a18d236eba9e70d682e1d",
+      "source_commit_date": "2026-04-16T18:21:51-07:00"
+    },
+    {
+      "version": "1.83.10",
+      "pypi_published": "2026-04-19T02:36:25.274613Z",
+      "source_commit": "666abc79156f2fb3e29def9a50ae49fa759f2386",
+      "source_commit_date": "2026-04-17T17:29:07-07:00"
+    },
+    {
+      "version": "1.83.11",
+      "pypi_published": "2026-04-22T02:02:41.773544Z",
+      "source_commit": "5e00acce56ef697134edb178cff2a430d85663ba",
+      "source_commit_date": "2026-04-21T18:45:26-07:00"
+    },
+    {
+      "version": "1.83.12",
+      "pypi_published": "2026-04-23T02:37:43.166128Z",
+      "source_commit": "d335e3c1c7f086cc0dcc3b9c38eeba562bf8f6d0",
+      "source_commit_date": "2026-04-22T13:39:57-07:00"
+    },
+    {
+      "version": "1.83.13",
+      "pypi_published": "2026-04-24T01:02:58.700697Z",
+      "source_commit": "9e2dced597a22157bfa95361948b9aeb287f55b8",
+      "source_commit_date": "2026-04-23T15:37:19-07:00"
+    },
+    {
+      "version": "1.83.14",
+      "pypi_published": "2026-04-26T03:16:05.720970Z",
+      "source_commit": "e2d0767d3c58d188d30d56ea6b362a02430499f2",
+      "source_commit_date": "2026-04-25T14:35:50-07:00"
+    },
+    {
+      "version": "1.84.0",
+      "pypi_published": "2026-05-14T05:45:49.927689Z",
+      "source_commit": "d64f6c6a57bfac8d035a536662575f9268f4e9e4",
+      "source_commit_date": "2026-05-11T09:18:43-07:00"
+    },
+    {
+      "version": "1.84.1",
+      "pypi_published": "2026-05-21T02:07:59.059200Z",
+      "source_commit": "b943f475f41fa2e3361e8f4af30653d914518a88",
+      "source_commit_date": "2026-05-20T20:08:55-04:00"
+    },
+    {
+      "version": "1.84.2",
+      "pypi_published": "2026-05-27T07:42:08.239162Z",
+      "source_commit": "f37f412c4033df755920954bafd29edb0f807bae",
+      "source_commit_date": "2026-05-26T18:24:40-07:00"
+    },
+    {
+      "version": "1.84.3",
+      "pypi_published": "2026-05-27T16:50:19.280958Z",
+      "source_commit": "2749ebefe9bca765984dd4c6f66471be2928834f",
+      "source_commit_date": "2026-05-27T11:55:06-04:00"
+    },
+    {
+      "version": "1.84.4",
+      "pypi_published": "2026-05-31T03:50:30.786189Z",
+      "source_commit": "35d14a6811435735ceabb4a4e6f4752888c33cf5",
+      "source_commit_date": "2026-05-30T22:11:29+00:00"
+    },
+    {
+      "version": "1.84.5",
+      "pypi_published": "2026-06-04T03:52:02.768729Z",
+      "source_commit": "297c75eb88da8153a90370bc84cd890af5382994",
+      "source_commit_date": "2026-06-03T20:08:28-04:00"
+    },
+    {
+      "version": "1.85.0",
+      "pypi_published": "2026-05-17T01:59:11.902851Z",
+      "source_commit": "6c74f36d2de318872cb28fa607522e5c49bdb6ec",
+      "source_commit_date": "2026-05-16T13:28:54-07:00"
+    },
+    {
+      "version": "1.85.1",
+      "pypi_published": "2026-05-21T02:30:35.096307Z",
+      "source_commit": "b943f475f41fa2e3361e8f4af30653d914518a88",
+      "source_commit_date": "2026-05-20T20:08:55-04:00"
+    },
+    {
+      "version": "1.85.2",
+      "pypi_published": "2026-05-27T08:03:26.659996Z",
+      "source_commit": "f37f412c4033df755920954bafd29edb0f807bae",
+      "source_commit_date": "2026-05-26T18:24:40-07:00"
+    },
+    {
+      "version": "1.85.3",
+      "pypi_published": "2026-06-02T02:11:31.931209Z",
+      "source_commit": "ba22971f8beb140de13c6714171d2900e133f1c4",
+      "source_commit_date": "2026-06-01T16:22:00-07:00"
+    },
+    {
+      "version": "1.85.4",
+      "pypi_published": "2026-06-04T04:57:59.234091Z",
+      "source_commit": "297c75eb88da8153a90370bc84cd890af5382994",
+      "source_commit_date": "2026-06-03T20:08:28-04:00"
+    },
+    {
+      "version": "1.86.0",
+      "pypi_published": "2026-05-24T02:42:00.629613Z",
+      "source_commit": "b67a6d80c24a19e2e2dc838e3b0a718848d7e5fe",
+      "source_commit_date": "2026-05-23T09:18:47-07:00"
+    },
+    {
+      "version": "1.86.1",
+      "pypi_published": "2026-05-26T03:51:49.991366Z",
+      "source_commit": "8a90bc573271566b42fdb9d6a3dbbb606baba07d",
+      "source_commit_date": "2026-05-25T17:12:09-04:00"
+    },
+    {
+      "version": "1.86.2",
+      "pypi_published": "2026-05-27T16:19:53.219402Z",
+      "source_commit": "2749ebefe9bca765984dd4c6f66471be2928834f",
+      "source_commit_date": "2026-05-27T11:55:06-04:00"
+    },
+    {
+      "version": "1.86.3",
+      "pypi_published": "2026-06-03T01:21:17.019541Z",
+      "source_commit": "6be2073655faf139fcfa8857a5a38e58f74d96c2",
+      "source_commit_date": "2026-06-02T15:26:44-07:00"
+    },
+    {
+      "version": "1.86.4",
+      "pypi_published": "2026-06-04T16:16:24.191670Z",
+      "source_commit": "6846519967b69320c1e94a09b440fa14aa2ff4c6",
+      "source_commit_date": "2026-06-04T12:14:56-04:00"
+    },
+    {
+      "version": "1.87.0",
+      "pypi_published": "2026-06-02T03:53:25.677788Z",
+      "source_commit": "ba22971f8beb140de13c6714171d2900e133f1c4",
+      "source_commit_date": "2026-06-01T16:22:00-07:00"
+    },
+    {
+      "version": "1.87.1",
+      "pypi_published": "2026-06-04T16:23:20.769779Z",
+      "source_commit": "6846519967b69320c1e94a09b440fa14aa2ff4c6",
+      "source_commit_date": "2026-06-04T12:14:56-04:00"
+    }
+  ]
+}
