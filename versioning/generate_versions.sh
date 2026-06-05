@@ -70,13 +70,13 @@ done
 restore_worktree
 trap - EXIT
 
-# Historical docs reference repo-root images via relative paths (e.g.
-# ../../img/foo.png). Because versioned_docs/version-X/ is one level deeper than
-# docs/, those refs resolve to versioned_docs/img/... -> expose that as a symlink
-# to the repo-root img/ so every still-present image resolves across all versions.
-echo ">> linking versioned_docs/img -> ../img"
-rm -rf versioned_docs/img
-ln -s ../img versioned_docs/img
+# Historical docs reference repo-root siblings (img/, src/, static/, ...) via
+# relative paths that escape the docs tree. Because versioned_docs/version-X/ is
+# one level deeper than docs/, those refs land at versioned_docs/<sibling>/...;
+# symlink each referenced sibling there so webpack/MDX resolves them everywhere.
+echo ">> symlinking escaping repo-root siblings into versioned_docs/"
+for s in img src static; do rm -rf "versioned_docs/$s"; done
+python3 versioning/link_escaping_siblings.py
 
 # Restore any images referenced by old snapshots but removed from img/ since.
 echo ">> restoring historical images removed from img/"
