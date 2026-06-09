@@ -134,7 +134,7 @@ items={[
   },
   {
     icon: "⚖️",
-    title: "Thirdlaw",
+    title: "ThirdLaw",
     description: "Runtime security and policy enforcement for agentic AI.",
     to: "/docs/proxy/guardrails/thirdlaw",
   },
