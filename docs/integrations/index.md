@@ -133,6 +133,12 @@ items={[
     to: "/docs/proxy/guardrails/azure_content_guardrail",
   },
   {
+    icon: "⚖️",
+    title: "Thirdlaw",
+    description: "Runtime security and policy enforcement for agentic AI.",
+    to: "/docs/proxy/guardrails/thirdlaw",
+  },
+  {
     icon: "🛏️",
     title: "Bedrock Guardrails",
     description: "AWS Bedrock safety.",
