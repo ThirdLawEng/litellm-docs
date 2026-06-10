@@ -1,39 +1,27 @@
 # ThirdLaw
 
-Use [ThirdLaw](https://www.thirdlaw.io/) as a guardrail provider, enabling runtime security for all LLM traffic routed through the proxy. ThirdLaw is purpose-built to secure autonomous and agentic AI systems that inspects every request and response inline, risk-scores interactions, and enforces policy decisions to block harmful actions, data exposure, and unsafe behavior before they can occur.
-
-ThirdLaw's key capabilities include:
-
-- **AI Runtime Protection** - Enforce policy in-line so violations are contained before they spread.
-- **Agent and Tool Controls** - Set boundaries on what agents can do, even when workflows get complex.
-- **AI Data Protection** - Detect and block sensitive data across AI interactions.
-- **AI Investigation and Response** - Replay prompts, outputs, and tool calls with investigation-ready evidence.
-- **AI Governance** - Turn acceptable use into scoped “Laws” that apply across AI apps and agents.
-
-
-The integration with thirdlaw uses a **two-entry guardrail pattern**:
-- `input` (`pre_call`) — validates requests against your security policies before they reach the LLM
-- `output` (`post_call`) — ingests requests and responses into ThirdLaw for monitoring and analysis
+[ThirdLaw](https://www.thirdlaw.io/) enforces runtime security policies on LLM traffic routed through the LiteLLM proxy. It evaluates prompts, responses, tool calls, and agent activity against your configured Laws and can block violations before they reach the model.
 
 ## Quick Start
 
-### 1. Get Your ThirdLaw Credentials
+### 1. Get your ThirdLaw credentials
 
-Set up the ThirdLaw Guardrail API Service and grab:
-- `THIRDLAW_API_BASE` — your Guardrail API Base
-- `THIRDLAW_API_KEY` — your API key
+Set up the ThirdLaw Guardrail API Service and obtain:
 
-### 2. Configure in `config.yaml`
+- `THIRDLAW_API_BASE`: your ThirdLaw Guardrail API base URL
+- `THIRDLAW_API_KEY`: your ThirdLaw API key
 
-#### Block + Ingest (recommended)
+### 2. Define guardrails in `config.yaml`
 
-Use both entries below. This gives you:
-- pre-call block decision
-- post-call ingestion for allowed traffic
-
-Keep these as two separate entries (`thirdlaw-input` and `thirdlaw-output`).
+### Block + Ingest (recommended)
 
 ```yaml
+model_list:
+  - model_name: gpt-5.5
+    litellm_params:
+      model: openai/gpt-5.5
+      api_key: os.environ/OPENAI_API_KEY
+
 guardrails:
   - guardrail_name: "thirdlaw-input"
     litellm_params:
@@ -42,8 +30,8 @@ guardrails:
       api_base: os.environ/THIRDLAW_API_BASE
       api_key: os.environ/THIRDLAW_API_KEY
       default_on: true
-      unreachable_fallback: fail_closed   # optional: fail_open | fail_closed (default: fail_closed)
-      guardrail_timeout: 5                # optional, default: 5
+      unreachable_fallback: fail_closed   # optional: fail_open | fail_closed. Default: fail_closed
+      guardrail_timeout: 5                # optional. Default: 5 seconds
 
   - guardrail_name: "thirdlaw-output"
     litellm_params:
@@ -54,9 +42,9 @@ guardrails:
       default_on: true
 ```
 
-#### Monitor-only mode
+### Monitor-only mode
 
-If you only want logging/ingestion and no blocking, keep only `thirdlaw-ingest`.
+To ingest traffic without blocking, use `thirdlaw-output` only:
 
 ```yaml
 guardrails:
@@ -69,31 +57,54 @@ guardrails:
       default_on: true
 ```
 
-#### Supported values for `mode`
+### Supported values for `mode`
 
-- `pre_call` Run **before** LLM call, on **input**
-- `post_call` Run **after** LLM call, on **input & output**
+- `pre_call`: runs before the LLM call on input. Can block requests that violate configured Laws.
+- `post_call`: runs after the LLM call on input and output. Used for monitoring, analysis, and investigation.
 
-### 3. Test request
+### 3. Start LiteLLM Gateway
 
-```shell
+```bash
+litellm --config config.yaml --detailed_debug
+```
+
+### 4. Test the integration
+
+With `default_on: true`, ThirdLaw guardrails run automatically on every request:
+
+```bash
 curl -i http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your litellm key>" \
+  -H "Authorization: Bearer <your-litellm-key>" \
   -d '{
-    "model": "gpt-5.5",
+    "model": "gpt-4o-mini",
     "messages": [
       {"role": "user", "content": "Hello, how are you?"}
     ]
   }'
 ```
 
-If a request gets blocked:
+To invoke ThirdLaw guardrails explicitly on a specific request:
+
+```bash
+curl -i http://localhost:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-litellm-key>" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Hello, how are you?"}
+    ],
+    "guardrails": ["thirdlaw-input", "thirdlaw-output"]
+  }'
+```
+
+If a request violates a configured Law:
 
 ```json
 {
   "error": {
-    "message": "The request is forbidden under ThirdLaw Acceptable Use Policy",
+    "message": "The request is forbidden under ThirdLaw policy",
     "type": "None",
     "param": "None",
     "code": "403"
@@ -103,46 +114,50 @@ If a request gets blocked:
 
 ## How It Works
 
-When an LLM request arrives, the ThirdLaw integration hands the payload to the ThirdLaw Guardrail Engine, which evaluates it against your configured laws and returns the verdict. Approved requests are forwarded to the LLM provider. Responses are sent back through the engine for output guardrail checks before being delivered to the caller. Every decision flows into the ThirdLaw dashboard for monitoring, threat analysis, and remediation.
+The `thirdlaw-input` guardrail evaluates each request before it reaches the model. Allowed requests are forwarded to the LLM provider. After the model responds, `thirdlaw-output` sends request and response data to ThirdLaw for monitoring and investigation. Blocked requests return `403` and send metadata to ThirdLaw.
 
 **Block + Ingest mode:**
+
 ```
-Request → LiteLLM → ThirdLaw guardrail check
-  → Allowed  → forward to LLM → ingest response
-  → Blocked  → ingest blocked marker → 403 error
+Request → LiteLLM → ThirdLaw pre-call policy check
+  → Allowed → forward to LLM → response → ThirdLaw post-call ingest → caller
+  → Blocked → ingest blocked metadata → 403 error
 ```
 
 **Monitor-only mode:**
+
 ```
-Request → LiteLLM → forward to LLM → get response
-  → Send to ThirdLaw (guardrails + ingest) → log only
+Request → LiteLLM → forward to LLM → response → ThirdLaw post-call ingest → caller
 ```
 
 ## Event Behavior
 
 | Entry | LiteLLM hook | ThirdLaw call behavior |
-|------|---|---|
-| `thirdlaw-input` | `pre_call` | Awaited call with `guardrails=true`, `ingest_data=false` |
-| `thirdlaw-output` | `post_call` | Fire-and-forget call with `guardrails=true`, `ingest_data=true` |
+| --- | --- | --- |
+| `thirdlaw-input` | `pre_call` | Awaited policy check (`guardrails=true`, `ingest_data=false`). Blocks requests that violate configured Laws. |
+| `thirdlaw-output` | `post_call` | Fire-and-forget ingest (`guardrails=true`, `ingest_data=true`). Sends request and response data for monitoring and investigation. |
 
-When blocked in `pre_call`, LiteLLM sends one fire-and-forget ingest payload with blocked metadata and returns `403`.
+When blocked in `pre_call`, LiteLLM sends a fire-and-forget ingest payload with blocked metadata and returns `403`.
+
+> **Note:** The call behavior details above reflect the current `/beta` endpoint. Flags and behavior may change before the endpoint reaches general availability.
+> 
 
 ## Supported Parameters
 
 | Parameter | Env Variable | Default | Description |
-|-----------|-------------|---------|-------------|
-| `api_base` | `THIRDLAW_API_BASE` | *required* | ThirdLaw Guardrail API Base URL |
-| `api_key` | `THIRDLAW_API_KEY` | *required* | API key (sent as `Authorization` header) |
-| `unreachable_fallback` | — | `fail_closed` | `fail_open` or `fail_closed` |
-| `guardrail_timeout` | — | `5` | Timeout in seconds |
-| `default_on` | — | `true` (recommended) | Enables the guardrail entry by default |
+| --- | --- | --- | --- |
+| `api_base` | `THIRDLAW_API_BASE` | required | ThirdLaw Guardrail API base URL |
+| `api_key` | `THIRDLAW_API_KEY` | required | ThirdLaw API key |
+| `unreachable_fallback` | none | `fail_closed` | Behavior when ThirdLaw is unreachable. `fail_open` or `fail_closed`. |
+| `guardrail_timeout` | none | `5` | Timeout in seconds for the ThirdLaw guardrail call. |
+| `default_on` | none | `true` recommended | Runs the guardrail by default on matching LiteLLM requests. |
 
 ## Error Handling
 
 | Scenario | `fail_closed` (default) | `fail_open` |
-|----------|------------------------|-------------|
-| ThirdLaw unreachable | ❌ Blocked (503) | ✅ Passes through |
-| ThirdLaw returns error | ❌ Blocked (503) | ✅ Passes through |
-| Guardrail says no | ❌ Blocked (403) | ❌ Blocked (403) |
+| --- | --- | --- |
+| ThirdLaw unreachable | Blocked, `503` | Allowed |
+| ThirdLaw returns an error | Blocked, `503` | Allowed |
+| ThirdLaw returns a block decision | Blocked, `403` | Blocked, `403` |
 
-In case you want to reach out to the ThirdLaw team, contact them at [support@thirdlaw.io](mailto:support@thirdlaw.io).
+For help with the ThirdLaw LiteLLM integration, contact [support@thirdlaw.io](mailto:support@thirdlaw.io).
