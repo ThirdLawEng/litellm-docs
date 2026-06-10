@@ -31,7 +31,8 @@ guardrails:
       api_key: os.environ/THIRDLAW_API_KEY
       default_on: true
       unreachable_fallback: fail_closed   # optional: fail_open | fail_closed. Default: fail_closed
-      guardrail_timeout: 5                # optional. Default: 5 seconds
+      guardrail_timeout: 5                # optional. Default: 60 seconds
+      additional_headers: "x-request-id,x-correlation-id"  # optional: comma-separated header names to forward
 
   - guardrail_name: "thirdlaw-output"
     litellm_params:
@@ -149,7 +150,8 @@ When blocked in `pre_call`, LiteLLM sends a fire-and-forget ingest payload with 
 | `api_base` | `THIRDLAW_API_BASE` | required | ThirdLaw Guardrail API base URL |
 | `api_key` | `THIRDLAW_API_KEY` | required | ThirdLaw API key |
 | `unreachable_fallback` | none | `fail_closed` | Behavior when ThirdLaw is unreachable. `fail_open` or `fail_closed`. |
-| `guardrail_timeout` | none | `5` | Timeout in seconds for the ThirdLaw guardrail call. |
+| `guardrail_timeout` | none | `60` | Timeout in seconds for the ThirdLaw guardrail call. |
+| `additional_headers` | none | none | Comma-separated list of header names that will be forwarded to the guardrails. |
 | `default_on` | none | `true` recommended | Runs the guardrail by default on matching LiteLLM requests. |
 
 ## Error Handling
