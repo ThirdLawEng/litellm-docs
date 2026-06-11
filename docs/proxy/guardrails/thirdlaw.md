@@ -42,7 +42,7 @@ guardrails:
 
 ### Monitor-only mode
 
-To ingest traffic without blocking, use `thirdlaw-output` only:
+To ingest traffic without blocking, use `thirdlaw-monitor` only with `ingest_only` set to `true`:
 
 ```yaml
 guardrails:
