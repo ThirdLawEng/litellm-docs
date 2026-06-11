@@ -1,6 +1,3 @@
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # ThirdLaw
 
 [ThirdLaw](https://www.thirdlaw.io/) enforces runtime security policies on LLM traffic routed through the LiteLLM proxy. It evaluates prompts, responses, tool calls, and agent activity against your configured Laws and can block violations before they reach the model.
@@ -62,13 +59,13 @@ For ingest-only visibility with less overhead, you can limit `mode` to `post_cal
 
 | `mode` | When it runs | With `ingest_only: false` (default) | With `ingest_only: true` |
 | --- | --- | --- | --- |
-| `pre_call` | Before the LLM call | Awaited policy check on input. Can block with `403`. | Fire-and-forget ingest. Does not block. |
-| `post_call` | After the LLM call | Fire-and-forget ingest of input and output. Does not block. | Same — ingest only. |
-| `during_call` | In parallel with the LLM call | Awaited check on input. Response is held until the check completes. LLM tokens are still consumed if the check fails. | Fire-and-forget ingest. Does not block. |
+| `pre_call` | Before the LLM call | Awaited policy check on input. Can block with `403` or modify the request. | Fire-and-forget ingest. Does not block. |
+| `post_call` | After the LLM call | Awaited policy check on response. Can block with `403` or modify the response | Same — ingest only. |
+| `during_call` | In parallel with the LLM call | Awaited check on input. Response is held until the check completes. LLM tokens are still consumed if the check fails. Can block with `403` but cannot modify. | Fire-and-forget ingest. Does not block. |
 
 **`ingest_only`** is a guardrail-level flag:
 
-- `false` (default): blocking modes (`pre_call`, `during_call`) await ThirdLaw and can return `403`. `post_call` always ingests in the background.
+- `false` (default): blocking modes (`pre_call`, `post_call`) await ThirdLaw and can return `403` or modify the request or response. `during_call` can only be allowed or blocked but cannot be modified.
 - `true`: every configured mode ingests without awaiting a block decision. Use this for monitor-only deployments.
 
 Combine modes as needed. Block + Ingest is `mode: [pre_call, post_call]` with `ingest_only: false`. Reserve `during_call` when you want input scanning in parallel with the LLM call and accept that tokens may be consumed before a block.
