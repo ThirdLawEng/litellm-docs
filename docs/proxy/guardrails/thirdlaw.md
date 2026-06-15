@@ -1,56 +1,17 @@
-import Image from '@theme/IdealImage';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # ThirdLaw
 
-[ThirdLaw](https://www.thirdlaw.io/) enforces runtime security policies on LLM traffic routed through the LiteLLM proxy. It evaluates prompts, responses, tool calls, and agent activity against your configured Laws and can block violations before they reach the model.
+[ThirdLaw](https://www.thirdlaw.io/) adds policy enforcement for LLM traffic routed through LiteLLM. LiteLLM sends guardrail inputs to ThirdLaw at configured hook points. ThirdLaw applies your configured Laws and returns an action, such as allowing the traffic, blocking it, or returning modified text.
+****
 
-## Prerequisites
+## How LiteLLM and ThirdLaw Work Together
 
-- **ThirdLaw Guardrail API Service** deployed and reachable from your LiteLLM host
-- **LiteLLM proxy** installed and running
-- **ThirdLaw credentials** — API base URL and API key (see Step 1 below)
+A **LiteLLM guardrail** tells LiteLLM when to send traffic to an external provider. A **ThirdLaw Law** is a policy in ThirdLaw that defines what to inspect and what action to take. When you configure a LiteLLM guardrail with ThirdLaw as the provider, LiteLLM sends traffic to ThirdLaw at the hook points you configure. ThirdLaw applies any matching Laws and returns a decision to LiteLLM.
 
-Before LiteLLM can block traffic, your ThirdLaw administrator must configure **Laws** (policy rules) in ThirdLaw. See the [ThirdLaw FAQ](https://www.thirdlaw.io/faq) for platform setup, or contact [support@thirdlaw.io](mailto:support@thirdlaw.io) for integration help.
-
-## Quick Start
-
-### 1. Get your ThirdLaw credentials
-
-Set up the ThirdLaw Guardrail API Service and obtain:
-
-- `THIRDLAW_API_BASE`: your ThirdLaw Guardrail API base URL
-- `THIRDLAW_API_KEY`: your ThirdLaw API key
-
-
-### 2. Configure environment variables on the LiteLLM proxy host
-
-```bash
-export THIRDLAW_API_KEY="your-thirdlaw-guardrail-api-key"
-export THIRDLAW_API_BASE="https://guardrails.thirdlaw.<your-domain>"
+```
+Caller → LiteLLM → ThirdLaw → allow / block / modify → LiteLLM → LLM
 ```
 
-### 3. Manage guardrails
-
-#### Supported Parameters
-
-ThirdLaw supports the following parameters to control traffic flow between LiteLLM and ThirdLaw and what actions ThirdLaw can take on each request.
-
-| Parameter | Env Variable | Default | Description |
-| --- | --- | --- | --- |
-| `mode` | — | required | `pre_call`, `post_call`, `during_call`, or a list (for example, `[pre_call, post_call]`). See [LiteLLM guardrail modes](/docs/proxy/guardrails/quick_start#supported-values-for-mode-event-hooks). |
-| `default_on` | — | `false` | When `true`, runs the guardrail on every request without requiring clients to pass the guardrail name. See [default-on guardrails](/docs/proxy/guardrails/quick_start#default-on-guardrails). |
-| `unreachable_fallback` | — | `fail_closed` | `fail_open` allows requests when ThirdLaw is unreachable or returns an error on awaited calls; `fail_closed` blocks them with `503`. Does not override policy block decisions (`403`). |
-| `api_base` | `THIRDLAW_API_BASE` | required | ThirdLaw Guardrail API base URL. |
-| `api_key` | `THIRDLAW_API_KEY` | optional | ThirdLaw API key. Required if not supplied another way. |
-| `ingest_only` | — | `true` | When `true`, LiteLLM forwards events to ThirdLaw without waiting for a policy decision. When `false`, LiteLLM waits for ThirdLaw and can block or modify traffic. |
-| `guardrail_timeout` | — | `60` | Timeout in seconds for awaited ThirdLaw calls. |
-| `additional_headers` | — | none | Comma-separated list of incoming request header names LiteLLM forwards to ThirdLaw (for example, `x-request-id` for trace correlation). |
-
-#### Recommended Settings for ThirdLaw
-
-ThirdLaw recommends the following configuration to get started:
+The configuration below:
 
 ```yaml
 guardrails:
@@ -58,112 +19,45 @@ guardrails:
     litellm_params:
       guardrail: thirdlaw
       mode: ["pre_call", "post_call"]
-      api_base: os.environ/THIRDLAW_API_BASE
-      api_key: os.environ/THIRDLAW_API_KEY
       default_on: true
-      ingest_only: true
-      unreachable_fallback: fail_open   # optional: fail_open | fail_closed (default: fail_closed)
-      guardrail_timeout: 60             # optional. Default: 60 seconds
-      additional_headers: "x-request-id,x-correlation-id"  # optional: incoming request headers to forward
 ```
 
-**Phase 1 — Monitor only (recommended to start).** With `ingest_only: true`, LiteLLM sends each request and response to ThirdLaw in the background. Traffic continues to your LLM without waiting for a policy decision, so latency stays low while ThirdLaw collects data.
+means:
 
-**Phase 2 — Enforce policies.** When your ThirdLaw team has finished setup—defining what to inspect (*scopes*), how to inspect it (*evaluators*), and the rules to apply (*Laws*)—set `ingest_only: false`. LiteLLM will then wait for ThirdLaw before allowing traffic through. ThirdLaw can **allow**, **block** (return `403`), or **modify** the request or response.
+- `guardrail_name: "thirdlaw"` is the name clients use to invoke this guardrail per request.
+- `guardrail: thirdlaw` tells LiteLLM to use the ThirdLaw provider.
+- `mode: ["pre_call", "post_call"]` sends traffic to ThirdLaw before the model call and after the model response.
+- `default_on: true` applies this guardrail to every request automatically.
 
-See the [ThirdLaw FAQ](https://www.thirdlaw.io/faq) for help configuring Laws before you disable `ingest_only`.
+## Prerequisites
 
-#### Define Guardrail
+**Existing ThirdLaw customers:** Your API base URL and API key were provided during deployment. If you do not have them, contact your ThirdLaw representative or email [support@thirdlaw.io](mailto:support@thirdlaw.io).
 
-Configure ThirdLaw in LiteLLM using the Admin UI or `config.yaml`.
+**New to ThirdLaw:** Visit [thirdlaw.io/contact](https://www.thirdlaw.io/contact) to get started. ThirdLaw will provision your environment and provide the credentials you need.
 
-<Tabs>
-<TabItem value="ui" label="LiteLLM Admin UI">
+You also need LiteLLM proxy installed and running. If you have not set that up yet, see the [LiteLLM proxy quickstart](https://docs.litellm.ai/docs/proxy/quick_start).
 
-#### 1. Open Guardrails
+> **Note:** You do not need to configure any Laws before starting. With no blocking Laws configured, ThirdLaw allows all traffic. Laws are only required when you are ready to enforce policy.
+> 
 
-In the LiteLLM Admin UI, go to **Guardrails** in the sidebar.
+## Quick Start
 
-<Image
-  img={require('../../../img/providers/thirdlaw/add_new.png')}
-  alt="LiteLLM Admin UI Guardrails page with Add New Guardrail button"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
+### 1. Set environment variables
 
-#### 2. Create a ThirdLaw guardrail
+Set your ThirdLaw credentials on the LiteLLM proxy host:
 
-Click **Add New Guardrail** and select **ThirdLaw** as the provider.
+```bash
+export THIRDLAW_API_KEY="your-thirdlaw-api-key"
+export THIRDLAW_API_BASE="https://api.thirdlaw.<your-domain>"
+```
 
-<Image
-  img={require('../../../img/providers/thirdlaw/create_page.png')}
-  alt="Add New Guardrail modal with ThirdLaw selected as the provider"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
+Use the actual API base URL provided by your ThirdLaw administrator. You can also supply these values directly in `config.yaml` or the LiteLLM Admin UI rather than as environment variables. Both approaches are shown below.
 
-#### 3. Set basic settings
+### 2. Configure the guardrail
 
-| UI field | Recommended value | Notes |
-| --- | --- | --- |
-| **Guardrail name** | `thirdlaw` | Used when clients pass `"guardrails": ["thirdlaw"]` in requests |
-| **Mode** | `pre_call`, `post_call` | See [Supported Parameters](#supported-parameters) for all options |
-| **Default on** | Enabled | Runs on every request without requiring the guardrail name in the client request |
+### config.yaml
 
-<Image
-  img={require('../../../img/providers/thirdlaw/basic_info.png')}
-  alt="ThirdLaw guardrail basic settings: guardrail name, mode, and Default on toggle"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
-
-#### 4. Connect to ThirdLaw
-
-Enter your ThirdLaw Guardrail API credentials:
-
-| UI field | Value |
-| --- | --- |
-| **API Base URL** | Your `THIRDLAW_API_BASE` (for example, `https://guardrails.thirdlaw.<your-domain>`) |
-| **API Key** | Your `THIRDLAW_API_KEY`, or reference the environment variable if the UI supports it |
-
-<Image
-  img={require('../../../img/providers/thirdlaw/basic_params.png')}
-  alt="ThirdLaw guardrail connection settings: API Base URL and API Key fields"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
-
-#### 5. Configure behavior (recommended for first deploy)
-
-Match the [recommended settings](#recommended-settings-for-thirdlaw) above:
-
-| UI field | Recommended value | Notes |
-| --- | --- | --- |
-| **Ingest only** | Enabled (`true`) | Monitor-only mode — see Phase 1 above |
-| **Unreachable fallback** | `fail_open` | Keeps traffic flowing if ThirdLaw is temporarily unavailable |
-| **Guardrail timeout** | `60` | Seconds to wait when enforcement is enabled |
-| **Additional headers** | `x-request-id,x-correlation-id` | Optional — incoming request headers to forward to ThirdLaw |
-
-<Image
-  img={require('../../../img/providers/thirdlaw/additional_params.png')}
-  alt="ThirdLaw guardrail advanced settings: ingest only, unreachable fallback, guardrail timeout, and additional headers"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
-
-Click **Save** (or **Create Guardrail**) to apply the configuration. Changes take effect without restarting the proxy.
-
-#### 6. Enable enforcement when ready
-
-After your ThirdLaw team has configured Laws, edit the guardrail in the UI and disable **Ingest only** to turn on blocking and modification (Phase 2 above).
-
-<Image
-  img={require('../../../img/providers/thirdlaw/update_settings.png')}
-  alt="Edit ThirdLaw guardrail with Ingest only disabled to enable policy enforcement"
-  style={{ width: '100%', maxWidth: '900px', height: 'auto' }}
-/>
-
-</TabItem>
-<TabItem value="config" label="config.yaml">
-
-#### 1. Update config.yaml
-
-Add an entry in the `guardrails` section that references the ThirdLaw integration.
+Add a ThirdLaw entry under `guardrails`:
 
 ```yaml
 model_list:
@@ -178,32 +72,50 @@ guardrails:
       guardrail: thirdlaw
       mode: ["pre_call", "post_call"]
       api_base: os.environ/THIRDLAW_API_BASE
-      api_key: os.environ/THIRDLAW_API_KEY
+      api_key: os.environ/THIRDLAW_API_KEY       # omit if not required by your deployment
       default_on: true
-      ingest_only: true
-      unreachable_fallback: fail_open   # optional: fail_open | fail_closed (default: fail_closed)
-      guardrail_timeout: 60             # optional. Default: 60 seconds
-      additional_headers: "x-request-id,x-correlation-id"  # optional: incoming request headers to forward
+      guardrail_timeout: 60
+      additional_headers: "x-request-id,x-correlation-id"
 ```
 
-#### 2. Start or restart the LiteLLM gateway
+### LiteLLM Admin UI
+
+1. Open **Guardrails** from the sidebar.
+2. Click **Add New Guardrail** and select **ThirdLaw** as the provider.
+3. Set **Guardrail name** to `thirdlaw`.
+4. Set **Mode** to `pre_call` and `post_call`.
+5. Enable **Default on**.
+6. Enter your ThirdLaw API base URL and API key. You can paste values directly or reference the environment variables set in step 1.
+7. Set **Guardrail timeout** to `60`.
+8. Optionally set **Additional headers** to `x-request-id,x-correlation-id` to forward those incoming request headers to ThirdLaw for policy evaluation context.
+9. Click **Save**.
+
+Admin UI changes take effect without restarting the proxy.
+
+### 3. Start the LiteLLM gateway
+
+If you configured ThirdLaw in `config.yaml`, start or restart the gateway:
 
 ```bash
 litellm --config config.yaml --detailed_debug
 ```
 
-</TabItem>
-</Tabs>
+### 4. Verify the gateway is running
 
+```bash
+curl -i http://localhost:4000/health
+```
 
-### 4. Test the integration
+### 5. Test the integration
 
-With `default_on: true`, the ThirdLaw guardrail runs automatically on every request:
+With `default_on: true`, LiteLLM sends every request through the ThirdLaw integration automatically:
 
 ```bash
 curl -i http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your-litellm-key>" \
+  -H "x-request-id: test-001" \
+  -H "x-correlation-id: thirdlaw-test" \
   -d '{
     "model": "gpt-5.5",
     "messages": [
@@ -212,7 +124,9 @@ curl -i http://localhost:4000/v1/chat/completions \
   }'
 ```
 
-To invoke the ThirdLaw guardrail explicitly on a specific request:
+Check the response headers for `x-litellm-applied-guardrails` to confirm LiteLLM applied the guardrail.
+
+To invoke the guardrail explicitly on a single request without `default_on`:
 
 ```bash
 curl -i http://localhost:4000/v1/chat/completions \
@@ -227,74 +141,92 @@ curl -i http://localhost:4000/v1/chat/completions \
   }'
 ```
 
-If a request violates a configured Law:
+## Parameter Reference
 
-```json
-{
-  "error": {
-    "message": "The request is forbidden under ThirdLaw policy",
-    "type": "None",
-    "param": "None",
-    "code": "403"
-  }
-}
-```
+Parameters with an environment variable alternative can be supplied either way. If both are set, the inline value takes precedence.
+
+| Parameter | Environment variable | Default | Description |
+| --- | --- | --- | --- |
+| `guardrail` | None | Required | Provider string. Must be `thirdlaw`. |
+| `mode` | None | Required | LiteLLM hook point. Supported values: `pre_call`, `post_call`, `during_call`, or a list such as `["pre_call", "post_call"]`. See [LiteLLM guardrail modes](https://docs.litellm.ai/docs/proxy/guardrails/quick_start#supported-values-for-mode-event-hooks). |
+| `default_on` | None | `false` | When `true`, LiteLLM sends every request through this guardrail automatically. When `false`, clients must pass `"guardrails": ["thirdlaw"]` in each request. See [default-on guardrails](https://docs.litellm.ai/docs/proxy/guardrails/quick_start#default-on-guardrails). |
+| `api_base` | `THIRDLAW_API_BASE` | Required | ThirdLaw API base URL. |
+| `api_key` | `THIRDLAW_API_KEY` | -- | ThirdLaw API key. Required if your ThirdLaw deployment uses API key authentication. Omit if your deployment is secured by a network trust boundary. |
+| `unreachable_fallback` | None | `fail_closed` | Controls LiteLLM behavior when ThirdLaw is unavailable or returns a non-policy error. `fail_closed` blocks the request with `500`. `fail_open` allows the request to continue. A block decision from ThirdLaw always returns `400` regardless of this setting. |
+| `guardrail_timeout` | None | `60` | Timeout in seconds when waiting for ThirdLaw. |
+| `additional_headers` | None | None | Comma-separated list of inbound request header names whose values ThirdLaw should receive. All inbound headers are forwarded, but only headers listed here have their actual values exposed; others are forwarded as `[present]`. Example: `x-request-id,x-correlation-id`. |
+
+## ThirdLaw Actions
+
+ThirdLaw returns an action to LiteLLM. The integration handles these actions as follows:
+
+| ThirdLaw action | LiteLLM behavior |
+| --- | --- |
+| `NONE` | Allows traffic unchanged. |
+| `GUARDRAIL_INTERVENED` | Uses the `texts` returned by ThirdLaw. This can be used for modified or redacted text. |
+| `BLOCKED` | Raises a LiteLLM guardrail exception and does not continue with the original traffic. |
 
 ## How It Works
 
-LiteLLM calls ThirdLaw at the hooks you configure in `mode` (typically `pre_call` and `post_call`). What changes between the two phases is whether LiteLLM **waits** for ThirdLaw before continuing. If you also use `during_call`, LiteLLM runs an awaited input check in parallel with the LLM call; tokens may be consumed before a block.
+LiteLLM calls ThirdLaw at the hook points configured in `mode`. The sections below describe what happens at each hook.
 
-### Monitor-only (`ingest_only: true`)
+### `pre_call`
 
-LiteLLM sends each request to your LLM right away. Copies of the request and response are forwarded to ThirdLaw in the background for logging and analysis. LiteLLM does not wait for a policy decision at any stage, so latency stays low while ThirdLaw collects data.
-
-```
-Request → LiteLLM → LLM → response → caller
-              ↓              ↓
-         ThirdLaw       ThirdLaw
-      (ingest only)  (ingest only)
-```
-
-### Enforce policies (`ingest_only: false`)
-
-LiteLLM waits for ThirdLaw at each configured hook. ThirdLaw evaluates traffic against your configured **Laws** and returns **allow**, **block** (`403`), or **modify**.
-
-**Input passes and output passes**
+Runs before the LLM call on the input. If ThirdLaw returns `NONE` or `GUARDRAIL_INTERVENED`, LiteLLM continues using the allowed or modified text. If ThirdLaw returns `BLOCKED`, the request does not reach the model.
 
 ```
-Request → LiteLLM → ThirdLaw (pre_call) → Allowed → LLM → response
-  → ThirdLaw (post_call) → Allowed → caller
+Request → LiteLLM → ThirdLaw (pre_call) → allow/modify → LLM
+Request → LiteLLM → ThirdLaw (pre_call) → block → guardrail error
 ```
 
-**Input violates a Law**
+### `post_call`
 
-The request never reaches the LLM. LiteLLM returns `403` and sends blocked-event metadata to ThirdLaw.
-
-```
-Request → LiteLLM → ThirdLaw (pre_call) → Blocked → 403
-```
-
-**Input passes, but the response violates a Law**
-
-The LLM completes the call, but LiteLLM blocks the response before returning it to the caller.
+Runs after the LLM call on the input and output. If ThirdLaw returns `NONE` or `GUARDRAIL_INTERVENED`, LiteLLM continues using the allowed or modified text. If ThirdLaw returns `BLOCKED`, LiteLLM raises a guardrail exception instead of returning the original model response.
 
 ```
-Request → LiteLLM → ThirdLaw (pre_call) → Allowed → LLM → response
-  → ThirdLaw (post_call) → Blocked → 403
+Request → LiteLLM → LLM → response → ThirdLaw (post_call) → allow/modify → caller
+Request → LiteLLM → LLM → response → ThirdLaw (post_call) → block → guardrail error
+```
+
+### `during_call`
+
+Runs in parallel with the LLM call on the input. LiteLLM does not return the model response until the ThirdLaw check completes. If ThirdLaw blocks the request, LiteLLM returns the guardrail error instead of the model response. Model tokens may still be consumed because the LLM call has already started.
+
+```
+Request → LiteLLM ┬→ LLM call
+                  └→ ThirdLaw (during_call)
+                          ↓
+                   allow / modify / block
+                   before response returned
 ```
 
 ## Error Handling
 
-When ThirdLaw cannot be reached or returns an error on an **awaited** call, LiteLLM uses `unreachable_fallback`. Policy block decisions (`403`) always block, regardless of this setting.
+When ThirdLaw is unreachable, times out, or returns a non-policy error, LiteLLM uses `unreachable_fallback`. A block decision from ThirdLaw always returns `400` regardless of this setting.
 
 | Scenario | `unreachable_fallback: fail_closed` (default) | `unreachable_fallback: fail_open` |
 | --- | --- | --- |
-| ThirdLaw unreachable | Blocked, `503` | Allowed |
-| ThirdLaw returns an error | Blocked, `503` | Allowed |
-| ThirdLaw returns a block decision | Blocked, `403` | Blocked, `403` |
+| ThirdLaw unreachable | Blocked, `500` | Allowed |
+| ThirdLaw times out | Blocked, `500` | Allowed |
+| ThirdLaw returns a non-policy error | Blocked, `500` | Allowed |
+| ThirdLaw returns a block decision | Blocked, `400` | Blocked, `400` |
+
+A policy block returns HTTP `400`. The response body format may vary by LiteLLM version. Example:
+
+```json
+{
+  "error": {
+    "message": "The request was blocked by a configured ThirdLaw policy.",
+    "type": "guardrail_blocked",
+    "param": null,
+    "code": "400"
+  }
+}
+```
 
 ## Further Reading
 
 - [ThirdLaw platform](https://www.thirdlaw.io/)
-- [ThirdLaw FAQ](https://www.thirdlaw.io/faq)
+- [LiteLLM Guardrails Quick Start](https://docs.litellm.ai/docs/proxy/guardrails/quick_start)
+- [LiteLLM Guardrail Providers](https://docs.litellm.ai/docs/guardrail_providers)
 - Integration support: [support@thirdlaw.io](mailto:support@thirdlaw.io)
