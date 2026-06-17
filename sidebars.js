@@ -98,6 +98,7 @@ const sidebars = {
           "proxy/guardrails/zscaler_ai_guard",
           "proxy/guardrails/javelin",
           "proxy/guardrails/akto",
+          "proxy/guardrails/thirdlaw",
           "proxy/guardrails/vigil_guard",
         ].sort(),
       ],
