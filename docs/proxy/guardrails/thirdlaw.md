@@ -1,3 +1,6 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # ThirdLaw
 
 Use [ThirdLaw](https://www.thirdlaw.io/) to enforce runtime policies on LLM traffic routed through LiteLLM Proxy. In ThirdLaw, policies are called Laws. ThirdLaw provides common Laws for PII detection, prompt injection, content moderation, and regulatory compliance. You define Laws for policies specific to your organization. At each configured hook point, ThirdLaw evaluates traffic against your Laws and returns a decision to allow, block, or modify content before it reaches the model or the caller.
@@ -25,7 +28,8 @@ Use the actual API base URL provided by your ThirdLaw administrator. You can als
 
 ### 2. Configure the guardrail
 
-### config.yaml
+<Tabs>
+<TabItem label="config.yaml" value = "config-yaml">
 
 To define the guardrail in `config.yaml`, useful for a version controlled file based setup, add a `guardrails` entry as shown below. 
 
@@ -54,7 +58,9 @@ Note the following parameters:
 - `default_on: true` applies this guardrail to every request automatically. Without it, clients must pass `"guardrails": ["thirdlaw"]` in each request to invoke the guardrail.
 - `additional_headers` forwards the listed inbound request headers to ThirdLaw with their actual values. Use this to pass correlation identifiers such as `x-request-id` or `x-correlation-id` so ThirdLaw can use them as policy evaluation context.
 
-### LiteLLM Admin UI
+</TabItem>
+
+<TabItem label="LiteLLM Admin UI" value = "admin-ui">
 
 1. Open **Guardrails** from the sidebar.
 2. Click **Add New Guardrail** and select **ThirdLaw** as the provider.
@@ -67,6 +73,10 @@ Note the following parameters:
 9. Click **Save**.
 
 Admin UI changes take effect without restarting the proxy.
+
+</TabItem>
+</Tabs>
+
 
 ### 3. Start the LiteLLM gateway
 
