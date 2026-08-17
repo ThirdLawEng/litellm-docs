@@ -2,7 +2,7 @@
 
 This guide outlines the process for safely rolling back a LiteLLM Proxy deployment to a previous version.
 
-We recommend rolling back to the previous [stable release](https://github.com/BerriAI/litellm/releases). Stable releases come out every week and follow the `main-v<VERSION>-stable` tag convention (e.g., `main-v1.77.2-stable`).
+We recommend rolling back to the previous [stable release](https://github.com/BerriAI/litellm/releases). Stable releases come out every week and follow the `vX.Y.Z` tag convention (e.g., `v1.89.4`).
 
 ## 1. Determine Rollback Scope
 
@@ -26,9 +26,9 @@ If you are on a managed database (e.g., AWS RDS, GCP Cloud SQL), create a snapsh
 
 Before reverting, review these items:
 
-- **`LITELLM_SALT_KEY`**: Do **not** change this value during rollback. It is used to encrypt/decrypt your LLM API Key credentials stored in the database. Changing it will make existing credentials unreadable. See [Best Practices for Production](../proxy/prod#8-set-litellm-salt-key).
+- **`LITELLM_SALT_KEY`**: Do **not** change this value during rollback. It is used to encrypt/decrypt your LLM API Key credentials stored in the database. Changing it will make existing credentials unreadable. See [Best Practices for Production](../proxy/prod#set-the-salt-key).
 - **`config.yaml`**: If you added settings specific to the newer version, the older version may not recognize them. Review your config and remove or comment out any settings that were introduced in the version you are rolling back from.
-- **`DISABLE_SCHEMA_UPDATE`**: If you use the [Helm PreSync hook for migrations](../proxy/prod#7-use-helm-presync-hook-for-database-migrations-beta) with `DISABLE_SCHEMA_UPDATE=true` on your pods, migrations will **not** auto-run on restart. You will need to handle migration cleanup manually (see Step 5) or re-run the PreSync hook against the older chart version.
+- **`DISABLE_SCHEMA_UPDATE`**: If you use the [Helm PreSync hook for migrations](../proxy/prod#run-migrations-from-the-helm-presync-hook) with `DISABLE_SCHEMA_UPDATE=true` on your pods, migrations will **not** auto-run on restart. You will need to handle migration cleanup manually (see Step 5) or re-run the PreSync hook against the older chart version.
 
 ## 4. Revert Application Version
 
@@ -38,7 +38,7 @@ Revert your deployment to the previous stable Docker image or Helm chart version
 Update your deployment manifest (e.g., K8s Deployment, Docker Compose) to use the previous version:
 ```yaml
 # Example: Reverting to the previous stable release
-image: docker.litellm.ai/berriai/litellm:main-v<VERSION>-stable
+image: docker.litellm.ai/berriai/litellm:v<VERSION>
 ```
 
 See [all available images](https://github.com/orgs/BerriAI/packages).
@@ -53,7 +53,7 @@ helm rollback <release-name> [revision-number]
 
 If you are rolling back to a version that did not have a specific migration, you may need to resolve the migration state in the database.
 
-> LiteLLM uses `prisma migrate deploy` for production (enabled via `USE_PRISMA_MIGRATE=True`). If a migration partially failed or you are reverting code that expects an older schema, you need to clean up the migration history in the `_prisma_migrations` table. See [Best Practices for Production](../proxy/prod#9-use-prisma-migrate-deploy).
+> LiteLLM uses `prisma migrate deploy` for production by default. If a migration partially failed or you are reverting code that expects an older schema, you need to clean up the migration history in the `_prisma_migrations` table. See [Best Practices for Production](../proxy/prod#use-prisma-migrate-deploy).
 
 ### Option A — Delete stale migration entries (recommended)
 

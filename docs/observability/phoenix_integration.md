@@ -1,55 +1,53 @@
-import Image from '@theme/IdealImage';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-# Arize Phoenix OSS
+# Arize Phoenix
 
-Open source tracing and evaluation platform
+Open-source LLM tracing and evaluation, at [phoenix.arize.com](https://phoenix.arize.com/). Run it self-hosted or on Phoenix Cloud.
 
-:::tip
+Phoenix and [Arize AX](./arize_integration) are different backends from the same company. AX is the hosted platform; Phoenix is the open-source tracer. They take different credentials and endpoints, so pick the callback for the backend you actually run. You can also enable both at once to send to each.
 
-This is community maintained. Please make an issue if you run into a bug:
-https://github.com/BerriAI/litellm
-
+:::info
+We want to learn how we can make the callbacks better! Meet the LiteLLM [founders](https://calendly.com/d/4mp-gd3-k5k/berriai-1-1-onboarding-litellm-hosted-version) or
+join our [discord](https://discord.gg/wuPM9dRgDw)
 :::
 
-
 ## Pre-Requisites
-Make an account on [Phoenix OSS](https://phoenix.arize.com)
-OR self-host your own instance of [Phoenix](https://docs.arize.com/phoenix/deployment)
+
+```shell
+uv add litellm
+```
 
 ## Quick Start
-Use just 2 lines of code, to instantly log your responses **across all providers** with Phoenix
 
-You can also use the instrumentor option instead of the callback, which you can find [here](https://docs.arize.com/phoenix/tracing/integrations-tracing/litellm).
+<Tabs>
+<TabItem value="python" label="SDK">
 
-```bash
-uv add opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp litellm[proxy]
-```
-```python
-litellm.callbacks = ["arize_phoenix"]
-```
 ```python
 import litellm
 import os
 
-# Set env variables
-os.environ["PHOENIX_API_KEY"] = "d0*****" # Set the Phoenix API key here. It is necessary only when using Phoenix Cloud.
-os.environ["PHOENIX_COLLECTOR_HTTP_ENDPOINT"] = "https://app.phoenix.arize.com/s/<space-name>/v1/traces" # Set the URL of your Phoenix OSS instance, otherwise tracer would use https://app.phoenix.arize.com/v1/traces for Phoenix Cloud.
-os.environ["PHOENIX_PROJECT_NAME"] = "litellm" # Configure the project name, otherwise traces would go to "default" project.
-os.environ['OPENAI_API_KEY'] = "fake-key" # Set the OpenAI API key here.
+os.environ["LITELLM_OTEL_V2"] = "true"
+os.environ["PHOENIX_API_KEY"] = ""
+os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "https://app.phoenix.arize.com/v1/traces"
+os.environ["PHOENIX_PROJECT_NAME"] = ""   # optional, defaults to "default"
+# LLM API Keys
+os.environ["OPENAI_API_KEY"] = ""
 
-# Set arize_phoenix as a callback & LiteLLM will send the data to Phoenix.
+# set arize_phoenix as a callback, litellm will send the data to phoenix
 litellm.callbacks = ["arize_phoenix"]
 
-# OpenAI call
+# openai call
 response = litellm.completion(
-  model="gpt-3.5-turbo",
+  model="gpt-4o",
   messages=[
     {"role": "user", "content": "Hi 👋 - i'm openai"}
   ]
 )
 ```
 
-## Using with LiteLLM Proxy
+</TabItem>
+<TabItem value="proxy" label="LiteLLM Proxy">
 
 1. Setup config.yaml
 
@@ -57,71 +55,98 @@ response = litellm.completion(
 model_list:
   - model_name: gpt-4o
     litellm_params:
-      model: openai/fake
-      api_key: fake-key
-      api_base: https://exampleopenaiendpoint-production.up.railway.app/
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
 
 litellm_settings:
   callbacks: ["arize_phoenix"]
-
-general_settings:
-  master_key: "sk-1234"
-
-environment_variables:
-    PHOENIX_API_KEY: "d0*****"
-    PHOENIX_COLLECTOR_ENDPOINT: "https://app.phoenix.arize.com/s/<space-name>/v1/traces" # OPTIONAL - For setting the gRPC endpoint
-    PHOENIX_COLLECTOR_HTTP_ENDPOINT: "https://app.phoenix.arize.com/s/<space-name>/v1/traces" # OPTIONAL - For setting the HTTP endpoint
 ```
 
-> Note: If you set the gRPC endpoint, install `grpcio` via `uv add "litellm[grpc]"` (or `grpcio`).
+2. Set your credentials
 
-2. Start the proxy
-
-```bash
-litellm --config config.yaml
+```shell
+LITELLM_OTEL_V2=true
+PHOENIX_API_KEY="your-api-key"
+PHOENIX_COLLECTOR_ENDPOINT="https://app.phoenix.arize.com/v1/traces"
+PHOENIX_PROJECT_NAME="my-project"   # optional
 ```
 
-3. Test it!
+3. Start LiteLLM Proxy
 
 ```bash
-curl -X POST 'http://0.0.0.0:4000/chat/completions' \
+litellm --config /path/to/config.yaml
+```
+
+4. Test it!
+
+```bash
+curl -L -X POST 'http://0.0.0.0:4000/v1/chat/completions' \
 -H 'Content-Type: application/json' \
 -H 'Authorization: Bearer sk-1234' \
--d '{ "model": "gpt-4o", "messages": [{"role": "user", "content": "Hi 👋 - i'm openai"}]}'
+-d '{
+  "model": "gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hey, how are you?"
+    }
+  ]
+}'
 ```
 
-## Supported Phoenix Endpoints
-Phoenix now supports multiple deployment types. The correct endpoint depends on which version of Phoenix Cloud you are using.
+</TabItem>
+</Tabs>
 
-**Phoenix Cloud (With Spaces - New Version)**
-Use this if your Phoenix URL contains `/s/<space-name>` path.
+## What Phoenix renders
 
-```bash
-https://app.phoenix.arize.com/s/<space-name>/v1/traces
+Open Phoenix; the project comes from `PHOENIX_PROJECT_NAME` (default `default`), stamped as the `openinference.project.name` resource attribute. Each request shows up as a `chat <model>` span under the request root.
+
+Phoenix uses the same OpenInference vocabulary as Arize AX, so the LLM-call span carries `llm.model_name`, `llm.provider`, the `llm.token_count.*` usage split, `llm.invocation_parameters`, the message arrays when content capture is on, and `llm.tools.*`, alongside the canonical `gen_ai.*` keys. See the [full attribute table](./opentelemetry_v2#seeing-your-traces).
+
+![LiteLLM trace in Phoenix](/img/observability/otel_v2_phoenix.png)
+
+## Configuration
+
+| Variable | Required | Notes |
+|---|---|---|
+| `PHOENIX_API_KEY` | Phoenix Cloud only | Required when the endpoint is on `app.phoenix.arize.com`; litellm raises without it. Self-hosted Phoenix does not need one |
+| `PHOENIX_COLLECTOR_HTTP_ENDPOINT` | No | Collector endpoint; takes precedence over `PHOENIX_COLLECTOR_ENDPOINT` when both are set |
+| `PHOENIX_COLLECTOR_ENDPOINT` | No | Collector endpoint, used when the HTTP variable is unset |
+| `PHOENIX_PROJECT_NAME` | No | Defaults to `default`; also readable as `PHOENIX_COLLECTOR_PROJECT_NAME` |
+
+If neither endpoint variable is set, litellm falls back to `http://localhost:6006/v1/traces`.
+
+### Protocol is inferred from the endpoint, not the variable name
+
+Neither variable is tied to a protocol. litellm picks the protocol from the value you give it: an endpoint starting with `grpc://`, or containing `:4317` without a `/v1/traces` path, exports over gRPC, and anything else exports over HTTP. So a Phoenix Cloud URL works in either variable, and pointing `PHOENIX_COLLECTOR_ENDPOINT` at `https://app.phoenix.arize.com/v1/traces` sends over HTTP as intended.
+
+### Picking the right collector endpoint
+
+Phoenix has more than one collector endpoint shape, and picking the wrong one is the most common Phoenix setup mistake. Point the endpoint at the shape that matches your deployment:
+
+| Deployment | Endpoint |
+|---|---|
+| Phoenix Cloud (Spaces) | `https://app.phoenix.arize.com/s/<space-name>/v1/traces` |
+| Phoenix Cloud (legacy) | `https://app.phoenix.arize.com/legacy/v1/traces` |
+| Phoenix Cloud (old) | `https://app.phoenix.arize.com/v1/traces` |
+| Self-hosted | `http://localhost:6006/v1/traces` |
+
+## Advanced
+
+### Send to Phoenix and Arize AX at once
+
+Presets compose, so you can run both backends from one proxy:
+
+```yaml
+litellm_settings:
+  callbacks: ["arize_phoenix", "arize"]
 ```
 
-**Phoenix Cloud (Legacy - Deprecated)**
-Use this only if your deployment still shows the `/legacy` pattern.
+## Full OpenTelemetry reference
 
-```bash
-https://app.phoenix.arize.com/legacy/v1/traces
-```
+This page covers the Phoenix-specific setup. For span attributes, prompt and response capture, metrics, distributed tracing, and which routes are traced, see the [OpenTelemetry v2 guide](./opentelemetry_v2).
 
-**Phoenix Cloud (Without Spaces - Old Version)**
-Use this if your Phoenix Cloud URL does not contain `/s/<space-name>` or `/legacy` path.
-
-```bash
-https://app.phoenix.arize.com/v1/traces
-```
-
-**Self-Hosted Phoenix (Local Instance)**
-Use this when running Phoenix on your machine or a private server.
-
-```bash
-http://localhost:6006/v1/traces
-```
-
-Depending on which Phoenix Cloud version or deployment you are using, you should set the corresponding endpoint in `PHOENIX_COLLECTOR_HTTP_ENDPOINT` or `PHOENIX_COLLECTOR_ENDPOINT`.
+Looking for prompt management rather than tracing? See [Arize Phoenix Prompt Management](../proxy/arize_phoenix_prompts).
 
 ## Support & Talk to Founders
 

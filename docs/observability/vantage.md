@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Vantage Integration
+# Vantage
 
 LiteLLM can export proxy spend data to [Vantage](https://vantage.sh) as [FOCUS 1.2](https://focus.finops.org/) formatted cost reports. This lets you visualize LLM spend alongside your cloud infrastructure costs in the Vantage dashboard.
 
@@ -129,8 +129,10 @@ LiteLLM spend data is transformed into the FOCUS 1.2 schema:
 | `api_key_alias` | BillingAccountName | Human-readable key alias |
 | `team_id` | SubAccountId | Team identifier |
 | `team_alias` | SubAccountName | Team name |
+| `organization_id` | Tags | Organization identifier (resolved from API key or team) |
+| `organization_alias` | Tags | Organization display name |
 
-Additional metadata (user_id, model_group, etc.) is included in the `Tags` column as JSON.
+Additional metadata (`user_id`, `user_email`, `model`, `model_group`, etc.) is also included in the `Tags` column as JSON.
 
 ## Upload Limits
 

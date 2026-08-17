@@ -9,6 +9,7 @@ Found under `kwargs["standard_logging_object"]`. This is a standard payload, log
 |-------|------|-------------|
 | `id` | `str` | Unique identifier |
 | `trace_id` | `str` | Trace multiple LLM calls belonging to same overall request |
+| `session_id` | `str` | End-user/conversation session id, from `litellm_session_id`. Independent of `trace_id`; only populated when `litellm_settings.request_correlation_in_logs` is enabled. [Further docs](./debugging#request-correlation-ids) |
 | `call_type` | `str` | Type of call |
 | `response_cost` | `float` | Cost of the response in USD ($) |
 | `cost_breakdown` | `Optional[CostBreakdown]` | Detailed cost breakdown object |
@@ -49,6 +50,9 @@ The `cost_breakdown` field provides detailed cost breakdown for completion reque
 - **`output_cost`**: Cost of output/completion tokens (including reasoning tokens if applicable)
 - **`tool_usage_cost`**: Cost of built-in tools usage (e.g., web search, code interpreter)
 - **`total_cost`**: Total cost of input + output + tool usage
+- **`reasoning_cost`**: Cost of reasoning tokens, reported as a subset of `output_cost` (populated when the model returns reasoning tokens, e.g. `gemini-2.5-flash`, `o3`)
+- **`cache_read_cost`**: Cost of cache-read tokens, reported as a subset of `input_cost` (populated when cached tokens are present in the response)
+- **`cache_creation_cost`**: Cost of cache-creation tokens, reported as a subset of `input_cost` (populated when prompt caching is used, e.g. Anthropic models)
 
 **Note**: This field is populated for all call types. For non-completion calls, `input_cost` and `output_cost` may be 0.
 
@@ -58,10 +62,13 @@ The total cost relationship is: `response_cost = cost_breakdown.total_cost`
 
 ```python
 class CostBreakdown(TypedDict, total=False):
-    input_cost: float        # Cost of input/prompt tokens in USD
-    output_cost: float       # Cost of output/completion tokens in USD (includes reasoning)
-    tool_usage_cost: float   # Cost of built-in tools usage in USD
-    total_cost: float        # Total cost in USD
+    input_cost: float           # Cost of input/prompt tokens in USD
+    output_cost: float          # Cost of output/completion tokens in USD (includes reasoning)
+    tool_usage_cost: float      # Cost of built-in tools usage in USD
+    total_cost: float           # Total cost in USD
+    reasoning_cost: float       # Cost of reasoning tokens in USD; subset of output_cost
+    cache_read_cost: float      # Cost of cache-read tokens in USD; subset of input_cost
+    cache_creation_cost: float  # Cost of cache-creation tokens in USD; subset of input_cost
 ```
 
 ## StandardLoggingUserAPIKeyMetadata

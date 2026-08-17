@@ -1,194 +1,140 @@
-
-import Image from '@theme/IdealImage';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Arize AI
+# Arize AX
 
-AI Observability and Evaluation Platform
+AI observability and evaluation for LLM applications, at [arize.com](https://arize.com/).
 
-<Image img={require('../../img/arize.png')} />
+Arize AX is the hosted platform. If you self-host the open-source tracer, or run it on Phoenix Cloud, see [Arize Phoenix](./phoenix_integration) instead; the two use different credentials and endpoints.
 
-
+:::info
+We want to learn how we can make the callbacks better! Meet the LiteLLM [founders](https://calendly.com/d/4mp-gd3-k5k/berriai-1-1-onboarding-litellm-hosted-version) or
+join our [discord](https://discord.gg/wuPM9dRgDw)
+:::
 
 ## Pre-Requisites
-Make an account on [Arize AI](https://app.arize.com/auth/login)
 
-## Quick Start
-Use just 2 lines of code, to instantly log your responses **across all providers** with arize
-
-You can also use the instrumentor option instead of the callback, which you can find [here](https://docs.arize.com/arize/llm-tracing/tracing-integrations-auto/litellm).
-
-```python
-litellm.callbacks = ["arize"]
+```shell
+uv add litellm
 ```
 
-```python
+## Quick Start
 
+<Tabs>
+<TabItem value="python" label="SDK">
+
+```python
 import litellm
 import os
 
-os.environ["ARIZE_SPACE_KEY"] = ""
+os.environ["LITELLM_OTEL_V2"] = "true"
+os.environ["ARIZE_SPACE_ID"] = ""
 os.environ["ARIZE_API_KEY"] = ""
-
+os.environ["ARIZE_PROJECT_NAME"] = ""   # recommended: names the project traces land in
 # LLM API Keys
-os.environ['OPENAI_API_KEY']=""
+os.environ["OPENAI_API_KEY"] = ""
 
 # set arize as a callback, litellm will send the data to arize
 litellm.callbacks = ["arize"]
- 
+
 # openai call
 response = litellm.completion(
-  model="gpt-3.5-turbo",
+  model="gpt-4o",
   messages=[
     {"role": "user", "content": "Hi 👋 - i'm openai"}
   ]
 )
 ```
 
-## Using with LiteLLM Proxy
-
-1. Setup config.yaml
-```yaml
-model_list:
-  - model_name: gpt-4
-    litellm_params:
-      model: openai/fake
-      api_key: fake-key
-      api_base: https://exampleopenaiendpoint-production.up.railway.app/
-
-litellm_settings:
-  callbacks: ["arize"]
-
-general_settings:
-  master_key: "sk-1234" # can also be set as an environment variable
-
-environment_variables:
-    ARIZE_SPACE_ID: "d0*****"
-    ARIZE_API_KEY: "141a****"
-    ARIZE_ENDPOINT: "https://otlp.arize.com/v1" # OPTIONAL - your custom arize GRPC api endpoint
-    ARIZE_HTTP_ENDPOINT: "https://otlp.arize.com/v1" # OPTIONAL - your custom arize HTTP api endpoint. Set either this or ARIZE_ENDPOINT or Neither (defaults to https://otlp.arize.com/v1 on grpc)
-    ARIZE_PROJECT_NAME: "my-litellm-project" # OPTIONAL - sets the arize project name
-```
-
-2. Start the proxy
-
-```bash
-litellm --config config.yaml
-```
-
-3. Test it!
-
-```bash
-curl -X POST 'http://0.0.0.0:4000/chat/completions' \
--H 'Content-Type: application/json' \
--H 'Authorization: Bearer sk-1234' \
--d '{ "model": "gpt-4", "messages": [{"role": "user", "content": "Hi 👋 - i'm openai"}]}'
-```
-
-## Pass Arize Space/Key per-request
-
-Supported parameters:
-- `arize_api_key`
-- `arize_space_key` *(deprecated, use `arize_space_id` instead)*
-- `arize_space_id`
-
-<Tabs>
-<TabItem value="sdk" label="SDK">
-
-```python
-import litellm
-import os
-
-# LLM API Keys
-os.environ['OPENAI_API_KEY']=""
-
-# set arize as a callback, litellm will send the data to arize
-litellm.callbacks = ["arize"]
- 
-# openai call
-response = litellm.completion(
-  model="gpt-3.5-turbo",
-  messages=[
-    {"role": "user", "content": "Hi 👋 - i'm openai"}
-  ],
-  arize_api_key=os.getenv("ARIZE_API_KEY"),
-  arize_space_id=os.getenv("ARIZE_SPACE_ID"),
-)
-```
-
 </TabItem>
-<TabItem value="proxy" label="PROXY">
+<TabItem value="proxy" label="LiteLLM Proxy">
 
 1. Setup config.yaml
+
 ```yaml
 model_list:
-  - model_name: gpt-4
+  - model_name: gpt-4o
     litellm_params:
-      model: openai/fake
-      api_key: fake-key
-      api_base: https://exampleopenaiendpoint-production.up.railway.app/
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
 
 litellm_settings:
   callbacks: ["arize"]
-
-general_settings:
-  master_key: "sk-1234" # can also be set as an environment variable
 ```
 
-2. Start the proxy
+2. Set your credentials
+
+```shell
+LITELLM_OTEL_V2=true
+ARIZE_SPACE_ID="your-space-id"
+ARIZE_API_KEY="your-api-key"
+ARIZE_PROJECT_NAME="your-project-name"   # recommended: names the project traces land in
+```
+
+3. Start LiteLLM Proxy
 
 ```bash
 litellm --config /path/to/config.yaml
 ```
 
-3. Test it!
-
-<Tabs>
-<TabItem value="curl" label="CURL">
+4. Test it!
 
 ```bash
-curl -X POST 'http://0.0.0.0:4000/chat/completions' \
+curl -L -X POST 'http://0.0.0.0:4000/v1/chat/completions' \
 -H 'Content-Type: application/json' \
 -H 'Authorization: Bearer sk-1234' \
 -d '{
-  "model": "gpt-4",
-  "messages": [{"role": "user", "content": "Hi 👋 - i'm openai"}],
-  "arize_api_key": "ARIZE_API_KEY",
-  "arize_space_id": "ARIZE_SPACE_ID"
+  "model": "gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hey, how are you?"
+    }
+  ]
 }'
 ```
+
 </TabItem>
-<TabItem value="openai_python" label="OpenAI Python">
+</Tabs>
 
-```python
-import openai
-client = openai.OpenAI(
-    api_key="anything",
-    base_url="http://0.0.0.0:4000"
-)
+## What Arize renders
 
-# request sent to model set on litellm proxy, `litellm --model`
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages = [
-        {
-            "role": "user",
-            "content": "this is a test request, write a short poem"
-        }
-    ],
-    extra_body={
-      "arize_api_key": "ARIZE_API_KEY",
-      "arize_space_id": "ARIZE_SPACE_ID"
-    }
-)
+Open your Arize project; the trace appears under the project named by `ARIZE_PROJECT_NAME`. Each request shows up as a `chat <model>` span under the request root.
 
-print(response)
+The `openinference` mapper stamps the OpenInference vocabulary onto the LLM-call span alongside the canonical `gen_ai.*` keys, so Arize reads its native schema without dropping the canonical ones. That covers `llm.model_name` and `llm.provider`, the `llm.token_count.*` usage split, `llm.invocation_parameters`, the `llm.input_messages.*` and `llm.output_messages.*` message arrays when content capture is on, and `llm.tools.*` for tool definitions. See the [full attribute table](./opentelemetry_v2#seeing-your-traces) or the [OpenInference spec](https://github.com/Arize-ai/openinference/blob/main/spec/semantic_conventions.md) for the definitive vocabulary.
+
+![LiteLLM trace in Arize](/img/observability/otel_v2_arize.png)
+
+## Configuration
+
+| Variable | Required | Notes |
+|---|---|---|
+| `ARIZE_SPACE_ID` | Yes | `ARIZE_SPACE_KEY` is the deprecated name and is still read for backward compatibility; prefer `ARIZE_SPACE_ID` in new configs |
+| `ARIZE_API_KEY` | Yes | |
+| `ARIZE_PROJECT_NAME` | No | Names the project traces land in. Nothing enforces it and spans are not rejected without it, but set it so your traces are grouped where you expect |
+| `ARIZE_ENDPOINT` | No | gRPC endpoint, defaults to `https://otlp.arize.com/v1` |
+| `ARIZE_HTTP_ENDPOINT` | No | Use instead of `ARIZE_ENDPOINT` to export over HTTP |
+
+Setting `ARIZE_ENDPOINT` selects gRPC and `ARIZE_HTTP_ENDPOINT` selects HTTP; if neither is set, litellm uses the gRPC default.
+
+## Advanced
+
+### Send to Arize and another backend at once
+
+Presets compose, so listing more than one sends the same traces to each destination in that tool's native format:
+
+```yaml
+litellm_settings:
+  callbacks: ["arize", "langfuse_otel"]
 ```
-</TabItem>
-</Tabs>
-</TabItem>
-</Tabs>
+
+### Per-team and per-key credentials {#pass-arize-spacekey-per-request}
+
+Arize supports per-request credentials, so different teams or keys can log to different Arize spaces without running separate proxies. Configure this from the Admin UI or the API as described in [per-key / per-team destinations](./opentelemetry_v2#per-key--per-team-destinations-multi-tenant).
+
+## Full OpenTelemetry reference
+
+This page covers the Arize-specific setup. For span attributes, prompt and response capture, metrics, distributed tracing, and which routes are traced, see the [OpenTelemetry v2 guide](./opentelemetry_v2).
 
 ## Support & Talk to Founders
 

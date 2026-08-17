@@ -1,8 +1,8 @@
 {
   "schema_version": "1",
-  "generated_at": "2026-06-15T06:16:28Z",
-  "litellm_version": "v1.83.14-stable",
-  "claude_code_version": "2.1.126",
+  "generated_at": "2026-08-17T06:15:56Z",
+  "litellm_version": "v1.97.0",
+  "claude_code_version": "2.1.228",
   "providers": [
     "anthropic",
     "bedrock_invoke",
@@ -22,8 +22,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -44,8 +43,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -66,8 +64,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -88,8 +85,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -128,16 +124,14 @@
           "status": "pass"
         },
         "bedrock_invoke": {
-          "status": "fail",
-          "error": "[claude-opus-4-7-bedrock-invoke] no `thinking` content block observed in stream-json events"
+          "status": "pass"
         },
         "bedrock_converse": {
           "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "error": "[claude-opus-4-7-bedrock-converse] no `thinking` content block observed in stream-json events"
         },
         "vertex_ai": {
-          "status": "fail",
-          "error": "[claude-opus-4-7-vertex] no `thinking` content block observed in stream-json events"
+          "status": "pass"
         },
         "azure": {
           "status": "pass"
@@ -155,8 +149,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -177,8 +170,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -200,7 +192,7 @@
         },
         "bedrock_converse": {
           "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; api_status=400; text=API Error: 400 litellm.BadRequestError: BedrockException - {\"message\":\"A text block must be included when using documents. Add a text block and retry your request.\"}. Received Model Group=claude-haiku-4-5-bedrock-converse\nAvailable Model Group Fallbacks=None; stderr=\u26a0 claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login \u00b7 Unset it to load your organization's connectors"
         },
         "vertex_ai": {
           "status": "pass"
@@ -221,8 +213,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -243,8 +234,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -265,8 +255,7 @@
           "status": "pass"
         },
         "bedrock_converse": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-bedrock-converse] claude CLI failed: exit=1; text=API Error: Content block is not a text block"
+          "status": "pass"
         },
         "vertex_ai": {
           "status": "pass"
@@ -290,8 +279,7 @@
           "status": "pass"
         },
         "vertex_ai": {
-          "status": "fail",
-          "error": "[claude-haiku-4-5-vertex] count_tokens probe failed: status 500: {\"detail\":{\"error\":\"Internal server error: vertexai import failed please run `pip install -U \\\"google-cloud-aiplatform>=1.38\\\"`. Got error: No module named 'vertexai'\"}}"
+          "status": "pass"
         },
         "azure": {
           "status": "pass"

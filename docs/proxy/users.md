@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 **Agent budgets**: Set rate limits (tpm/rpm) and session-level caps (iterations, dollar budget) on agents [**Jump**](#agents)
 
-***If a key belongs to a team, the team budget is applied, not the user's personal budget.***
+***If a key belongs to a team, only the team (and team-member) budgets are enforced; the key owner's personal budget does not apply. `v1.94.0` briefly enforced the personal budget as well, behind a `skip_user_budget_on_team_key` opt-out; both the enforcement and the flag were removed in `v1.95.0`.***
 :::
 
 Requirements: 
@@ -202,7 +202,7 @@ Apply a budget across all calls an internal user (key owner) can make on the pro
 
 :::info
 
-For keys, with a 'team_id' set, the team budget is used instead of the user's personal budget.
+For keys with a `team_id` set, this personal budget is not enforced; the team (and team-member) budgets apply instead. `v1.94.0` enforced it alongside the team budget behind a `skip_user_budget_on_team_key` opt-out, and `v1.95.0` removed both.
 
 To apply a budget to a user within a team, use team member budgets.
 
@@ -482,6 +482,8 @@ Expected response on failure
 </TabItem>
 </Tabs>
 
+To reroute requests to another model once a per-model budget is exceeded instead of returning `budget_exceeded`, see [Budget Fallbacks](./budget_fallbacks).
+
 
 ### Agents
 
@@ -590,17 +592,31 @@ curl -X PATCH 'http://localhost:4000/v1/agents/<agent_id>' \
 
 Use this to budget `user` passed to `/chat/completions`, **without needing to create a key for every user**
 
-**Step 1. Modify config.yaml**
-Define `litellm.max_end_user_budget`
+**Step 1. Create the budget**
+
+```shell
+curl --location 'http://0.0.0.0:4000/budget/new' \
+        --header 'Authorization: Bearer sk-1234' \
+        --header 'Content-Type: application/json' \
+        --data '{
+        "budget_id": "default-customer-budget",
+        "max_budget": 0.0001
+        }'
+```
+
+**Step 2. Point `max_end_user_budget_id` at that budget in config.yaml**
+
 ```yaml
 general_settings:
   master_key: sk-1234
 
 litellm_settings:
-  max_end_user_budget: 0.0001 # budget for 'user' passed to /chat/completions
+  max_end_user_budget_id: "default-customer-budget" # applied to any 'user' without their own budget
 ```
 
-2. Make a /chat/completions call, pass 'user' - First call Works 
+This budget applies to every customer that has no budget of their own, including customers that don't exist in the database yet. LiteLLM caches the budget object for 60 seconds, so edits to it take up to a minute to apply. The float setting `max_end_user_budget` is no longer enforced; if you have it in your config, replace it with `max_end_user_budget_id` as shown above.
+
+3. Make a /chat/completions call, pass 'user' - First call Works 
 ```shell
 curl --location 'http://0.0.0.0:4000/chat/completions' \
         --header 'Content-Type: application/json' \
@@ -617,7 +633,7 @@ curl --location 'http://0.0.0.0:4000/chat/completions' \
         }'
 ```
 
-3. Make a /chat/completions call, pass 'user' - Call Fails, since 'ishaan3' over budget
+4. Make a /chat/completions call, pass 'user' - Call Fails, since 'ishaan3' over budget
 ```shell
 curl --location 'http://0.0.0.0:4000/chat/completions' \
         --header 'Content-Type: application/json' \
@@ -636,8 +652,10 @@ curl --location 'http://0.0.0.0:4000/chat/completions' \
 
 Error
 ```shell
-{"error":{"message":"Budget has been exceeded: User ishaan3 has exceeded their budget. Current spend: 0.0008869999999999999; Max Budget: 0.0001","type":"auth_error","param":"None","code":401}}%                
+{"error":{"message":"ExceededBudget: End User=ishaan3 over budget. Spend=0.0008869999999999999, Budget=0.0001","type":"auth_error","param":"None","code":401}}%
 ```
+
+Customer budgets are global per deployment. Spend is tracked against the customer id alone, so the same customer shares one budget across every virtual key and team, and a customer budget can't be scoped to a single key or team.
 
 ## Reset Budgets 
 
@@ -696,6 +714,24 @@ general_settings:
   proxy_budget_rescheduler_max_time: 1
 ```
 
+## Fallback to 'free' models
+
+If a key/user/team is at its budget limit, requests to models configured with `input_cost_per_token: 0` and `output_cost_per_token: 0` are still allowed. Budget checks are skipped entirely for zero-cost models.
+
+This lets you configure free or self-hosted models as a fallback that budget-exhausted keys can still access.
+
+To mark a model as free, set both cost fields explicitly to `0` in your `config.yaml`:
+
+```yaml
+model_list:
+  - model_name: my-free-model
+    litellm_params:
+      model: ollama/llama3
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+```
+
+**Note:** The cost fields must be explicitly set to `0`. If they are unset (`null`/missing), the model is not treated as free and budget checks still apply.
 ## Hard budget enforcement (fail closed)
 
 Budget checks read current spend from a cross-pod counter in Redis, which keeps enforcement fast and consistent across workers and replicas. The counter is the source of truth on the hot path, and the database is reconciled in the background. If Redis restarts and reloads an older snapshot, the counter can come back lower than the spend already recorded in the database; on the hot path that stale value is trusted, which can let a key keep spending past its `max_budget` until the counter is corrected.
@@ -738,6 +774,66 @@ general_settings:
 | `output` | Count only completion/output tokens |
 
 This setting applies globally to all TPM rate limit checks (keys, users, teams, etc.).
+
+### Estimated Output Tokens (requests without `max_tokens`)
+
+TPM limits are enforced by reserving tokens before the call and reconciling against real usage after it. When a request omits `max_tokens` / `max_completion_tokens`, LiteLLM has to guess how many output tokens to reserve, and the built-in guess is a single static estimate shared by every key, team and model.
+
+That guess is wrong in both directions. If your model really emits more than the estimate, concurrent requests are all admitted against an under-reservation and the window overruns the limit once they finish. If it emits far less, the over-reservation blocks requests the budget could have served.
+
+Declare what your models actually emit with `default_estimated_output_tokens` (one value) and `default_estimated_output_tokens_per_model` (a map of model name to value). Both are settable on a key and on a team.
+
+```shell
+curl --location 'http://0.0.0.0:4000/key/generate' \
+--header 'Authorization: Bearer sk-1234' \
+--header 'Content-Type: application/json' \
+--data '{
+  "team_id": "my-prod-team",
+  "tpm_limit": 1000000,
+  "default_estimated_output_tokens": 2048,
+  "default_estimated_output_tokens_per_model": {
+    "gpt-4": 4096,
+    "gpt-3.5-turbo": 1024
+  }
+}'
+```
+
+The same two fields work on `/team/new` and `/team/update`, and both are editable from the Admin UI on the key and team settings pages.
+
+```shell
+curl --location 'http://0.0.0.0:4000/team/update' \
+--header 'Authorization: Bearer sk-1234' \
+--header 'Content-Type: application/json' \
+--data '{
+  "team_id": "my-prod-team",
+  "default_estimated_output_tokens": 4096,
+  "default_estimated_output_tokens_per_model": {"gpt-4": 8192}
+}'
+```
+
+**Resolution order** for the reserved output budget, first match wins:
+
+| Priority | Source |
+| --- | --- |
+| 1 | Request `max_tokens` or `max_completion_tokens` |
+| 2 | Key `default_estimated_output_tokens_per_model[model]` |
+| 3 | Key `default_estimated_output_tokens` |
+| 4 | Team `default_estimated_output_tokens_per_model[model]` |
+| 5 | Team `default_estimated_output_tokens` |
+| 6 | Built-in static estimate |
+
+Values must be positive integers, and the management endpoints reject anything else with a `422` naming the offending field. A value that is missing, or malformed because it was written straight into `metadata` rather than through these fields, falls through to the next tier, so a key that declares nothing behaves exactly as it does today. Embedding requests are unaffected since they produce no output tokens.
+
+:::tip
+Size the estimate from your observed output distribution for that model, around the p95, not from its maximum context. Both directions cost you something:
+
+- Declaring **more** than the model emits throttles traffic the budget could have served. If the declared value plus the input estimate exceeds the limit the request is charged against, every such request is refused, and the proxy logs the reservation and the limit at debug level so you can see why.
+- Declaring **less** than the model emits is worse than declaring nothing, because the reservation is then smaller than the built-in estimate and more concurrent requests are admitted before the real usage lands.
+:::
+
+:::note
+The proxy already hard-caps generation for tenants whose smallest applicable TPM limit is under 4096, by injecting a `max_tokens` of a quarter of that limit. A declaration larger than that cap raises it, so you are never truncated below what you said your model emits. A declaration smaller than it is ignored, because an estimate describes the typical response and must not silently truncate the long tail.
+:::
 
 
 <Tabs>

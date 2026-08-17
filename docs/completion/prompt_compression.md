@@ -1,8 +1,16 @@
 # Prompt Compression (`compress()`)
 
+:::info Beta
+
+This feature is in beta. APIs and behavior may change before general availability.
+
+:::
+
 Use `litellm.compress()` to shrink long conversation history before calling `completion()`.
 
 The function keeps high-relevance and recent context, replaces low-relevance content with lightweight stubs, and returns a retrieval tool so the model can request full content only when needed.
+
+For proxy users who want compression handled server-side by an external service instead of an in-process call, see [Headroom](/docs/proxy/headroom).
 
 ## Quickstart
 
