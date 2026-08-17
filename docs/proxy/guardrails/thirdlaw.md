@@ -175,6 +175,9 @@ Parameters with an environment variable alternative can be supplied either way. 
 | `unreachable_fallback` | `fail_closed` | Controls LiteLLM behavior when ThirdLaw is unavailable or returns a non-policy error. `fail_closed` blocks the request. `fail_open` allows the request to continue.  |
 | `guardrail_timeout` | `60` | Timeout in seconds when waiting for ThirdLaw. |
 | `additional_headers` | None | Comma-separated list of inbound request header names whose values ThirdLaw should receive. LiteLLM forwards all inbound headers to ThirdLaw. Only headers listed in `additional_headers` are sent with their actual values; all other headers are forwarded with the value `[present]`. Example: `x-request-id,x-correlation-id`. |
+| `streaming_buffer_until_moderated` | `true` | Hold every streamed chunk until ThirdLaw has moderated the assembled response, so no flagged content reaches the client before a block decision. Implies `streaming_end_of_stream_only`. See [Streaming](#streaming). |
+| `streaming_end_of_stream_only` | `true` | Call ThirdLaw once on the assembled response when the stream finishes, rather than on individual chunks. Set to `false` to also check chunks mid-stream at the interval set by `streaming_sampling_rate`. |
+| `streaming_sampling_rate` | `5` | When `streaming_end_of_stream_only` is `false`, check every Nth streamed chunk. Must be at least 1. Ignored otherwise. |
 
 ## ThirdLaw Actions
 
@@ -207,6 +210,28 @@ Runs after the LLM call on the input and output. If ThirdLaw returns `NONE` or `
 Request → LiteLLM → LLM → response → ThirdLaw (post_call) → allow/modify → LiteLLM  → Caller
 Request → LiteLLM → LLM → response → ThirdLaw (post_call) → block → LiteLLM → guardrail error  → Caller
 ```
+
+### Streaming
+
+Streaming responses are checked on `post_call`. By default, LiteLLM buffers the stream and sends the assembled response to ThirdLaw before releasing anything to the client. If ThirdLaw allows the response, the original chunks are then streamed out; if it blocks, the client receives only the guardrail error and no model content. This is the safest configuration, but the caller waits for the full response to finish and be moderated before the first token arrives.
+
+If that latency is a problem, set `streaming_buffer_until_moderated: false`. Chunks then stream to the client as the model produces them and ThirdLaw checks the assembled response once at end of stream. A block at that point terminates the stream, but content already sent cannot be recalled. To catch violations earlier in long responses, also set `streaming_end_of_stream_only: false` so ThirdLaw checks every Nth chunk during the stream, where N is `streaming_sampling_rate`. Lower values catch violations sooner at the cost of more calls to ThirdLaw.
+
+```yaml
+guardrails:
+  - guardrail_name: "thirdlaw"
+    litellm_params:
+      guardrail: thirdlaw
+      mode: ["pre_call", "post_call"]
+      api_base: os.environ/THIRDLAW_API_BASE
+      api_key: os.environ/THIRDLAW_API_KEY
+      default_on: true
+      streaming_buffer_until_moderated: false   # stream chunks immediately
+      streaming_end_of_stream_only: false       # also check mid-stream
+      streaming_sampling_rate: 5                # every 5th chunk
+```
+
+Buffered streaming replays the original chunks unchanged on allow, so it enforces allow and block decisions; content modified by ThirdLaw is returned only on non-streaming responses.
 
 ### `during_call`
 
