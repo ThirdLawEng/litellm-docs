@@ -20,7 +20,6 @@ You also need LiteLLM proxy installed and running. If you have not set that up y
 Set your ThirdLaw credentials on the LiteLLM proxy host:
 
 ```bash
-export THIRDLAW_API_KEY="your-thirdlaw-api-key"
 export THIRDLAW_API_BASE="https://api.thirdlaw.<your-domain>"
 ```
 
@@ -46,17 +45,16 @@ guardrails:
       guardrail: thirdlaw
       mode: ["pre_call", "post_call"]
       api_base: os.environ/THIRDLAW_API_BASE
-      api_key: os.environ/THIRDLAW_API_KEY       # omit if not required by your deployment
       default_on: true
       guardrail_timeout: 60
-      additional_headers: "x-request-id,x-correlation-id"
+      additional_headers: "x-example-app"
 ```
 
 Note the following parameters:
 
 - `mode: ["pre_call", "post_call"]` sends traffic to ThirdLaw before the LLM call (on input) and after the LLM call (on input and output). To run the check in parallel with the LLM call instead of before it, use `during_call`. See [Supported values for mode](https://docs.litellm.ai/docs/proxy/guardrails/quick_start#supported-values-for-mode-event-hooks).
 - `default_on: true` applies this guardrail to every request automatically. Without it, clients must pass `"guardrails": ["thirdlaw"]` in each request to invoke the guardrail.
-- `additional_headers` forwards the listed inbound request headers to ThirdLaw with their actual values. Use this to pass correlation identifiers such as `x-request-id` or `x-correlation-id` so ThirdLaw can use them as policy evaluation context.
+- `additional_headers` forwards the listed inbound request headers to ThirdLaw with their actual values. Specify any headers here that carry identifying information about an application or user, so that these identifying names are availble within the ThirdLaw application.
 
 </TabItem>
 
@@ -67,9 +65,9 @@ Note the following parameters:
 3. Set **Guardrail name** to `thirdlaw`.
 4. Set **Mode** to `pre_call` and `post_call`.
 5. Enable **Default on**.
-6. Enter your ThirdLaw API base URL and API key. You can paste values directly or reference the environment variables set in step 1.
+6. Enter your ThirdLaw API base URL; leave the API key setting blank. You can paste values directly or reference the environment variables set in step 1.
 7. Set **Guardrail timeout** to `60`.
-8. Optionally set **Additional headers** to `x-request-id,x-correlation-id` to forward those incoming request headers to ThirdLaw for policy evaluation context.
+8. Optionally set **Additional headers** to any identifying headers that your applications use.
 9. Click **Save**.
 
 Admin UI changes take effect without restarting the proxy.
@@ -100,8 +98,6 @@ With `default_on: true`, LiteLLM sends every request through the ThirdLaw integr
 curl -i http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your-litellm-key>" \
-  -H "x-request-id: test-001" \
-  -H "x-correlation-id: thirdlaw-test" \
   -d '{
     "model": "gpt-5.5",
     "messages": [
@@ -148,7 +144,7 @@ curl -i http://localhost:4000/v1/chat/completions \
   }'
 ```
 
-A policy block returns HTTP `400`. The response body format may vary by LiteLLM version. Example:
+A policy block returns an error status, chosen during the configuration of a ThirdLaw Law.  The response body format may vary by LiteLLM version. Example:
 
 ```json
 {
@@ -156,7 +152,7 @@ A policy block returns HTTP `400`. The response body format may vary by LiteLLM 
     "message": "The request was blocked by a configured ThirdLaw policy.",
     "type": "guardrail_blocked",
     "param": null,
-    "code": "400"
+    "code": "403"
   }
 }
 ```
@@ -171,20 +167,20 @@ Parameters with an environment variable alternative can be supplied either way. 
 | `mode` | Required | LiteLLM hook point. Supported values: `pre_call`, `post_call`, `during_call`, or a list such as `["pre_call", "post_call"]`. See [LiteLLM guardrail modes](https://docs.litellm.ai/docs/proxy/guardrails/quick_start#supported-values-for-mode-event-hooks). |
 | `default_on` | `false` | When `true`, LiteLLM sends every request through this guardrail automatically. When `false`, clients must pass `"guardrails": ["thirdlaw"]` in each request. See [default-on guardrails](https://docs.litellm.ai/docs/proxy/guardrails/quick_start#default-on-guardrails). |
 | `api_base` | os.environ/THIRDLAW_API_BASE | ThirdLaw API base URL. |
-| `api_key` | os.environ/THIRDLAW_API_KEY | ThirdLaw API key.  |
 | `unreachable_fallback` | `fail_closed` | Controls LiteLLM behavior when ThirdLaw is unavailable or returns a non-policy error. `fail_closed` blocks the request. `fail_open` allows the request to continue.  |
 | `guardrail_timeout` | `60` | Timeout in seconds when waiting for ThirdLaw. |
-| `additional_headers` | None | Comma-separated list of inbound request header names whose values ThirdLaw should receive. LiteLLM forwards all inbound headers to ThirdLaw. Only headers listed in `additional_headers` are sent with their actual values; all other headers are forwarded with the value `[present]`. Example: `x-request-id,x-correlation-id`. |
+| `additional_headers` | None | Comma-separated list of inbound request header names whose values ThirdLaw should receive. LiteLLM forwards all inbound headers to ThirdLaw. Only headers listed in `additional_headers` are sent with their actual values; all other headers are forwarded with the value `[present]`. Example: `x-thirdlaw-app-id`. |
+| `streaming_buffer_until_moderated | `true` | Hold every streamed chunk until ThirdLaw has moderated the assembled response, so no flagged content reaches the client before a block decision. |
 
 ## ThirdLaw Actions
 
-After each evaluation, ThirdLaw returns an action. LiteLLM maps it to one of three outcomes for the caller:
+After each evaluation, ThirdLaw returns an policy decision. LiteLLM maps it to one of three outcomes for the caller:
 
-| Outcome | ThirdLaw action | HTTP status | What the caller receives |
-| --- | --- | --- | --- |
-| **Allow** | `NONE` | `200` | The original request or response, unchanged. |
-| **Modify** | `GUARDRAIL_INTERVENED` | `200` | A successful response with some text replaced by ThirdLaw (for example, redacted or rewritten content). |
-| **Block** | `BLOCKED` | `400` | A guardrail error. LiteLLM does not continue with the original traffic. |
+| ThirdLaw policy | HTTP status | What the caller receives |
+| --- | --- | --- |
+| **Allow** | `200` | The original request or response, unchanged. |
+| **Modify** | `200` | A response with textual substitution made to redact information identified by the Law. May be applied to a request to keep sensitive data from leaving your systems. |
+| **Block** | specified by policy | A guardrail error. If a request is blocked, then no data is sent to the LLM, when using `pre_call` mode. |
 
 ## How It Works
 
@@ -192,7 +188,7 @@ LiteLLM calls ThirdLaw at the hook points configured in `mode`. The sections bel
 
 ### `pre_call`
 
-Runs before the LLM call on the input. If ThirdLaw returns `NONE` or `GUARDRAIL_INTERVENED`, LiteLLM continues using the allowed or modified text. If ThirdLaw returns `BLOCKED`, the request does not reach the model.
+Runs before the LLM call on the input. If ThirdLaw returns "Allow" or "Modify", LiteLLM continues using the allowed or modified text. If ThirdLaw returns "Block", the request does not reach the model.
 
 ```
 Request → LiteLLM → ThirdLaw (pre_call) → allow/modify → LLM
@@ -201,7 +197,7 @@ Request → LiteLLM → ThirdLaw (pre_call) → block → LiteLLM → guardrail 
 
 ### `post_call`
 
-Runs after the LLM call on the input and output. If ThirdLaw returns `NONE` or `GUARDRAIL_INTERVENED`, LiteLLM continues using the allowed or modified text. If ThirdLaw returns `BLOCKED`, LiteLLM raises a guardrail exception instead of returning the original model response.
+Runs after the LLM call on the input and output. If ThirdLaw returns "Allow" or "Modify", LiteLLM continues using the allowed or modified text. If ThirdLaw returns "Block", LiteLLM raises a guardrail exception instead of returning the original model response.
 
 ```
 Request → LiteLLM → LLM → response → ThirdLaw (post_call) → allow/modify → LiteLLM  → Caller
@@ -219,6 +215,12 @@ Request → LiteLLM ┬→ LLM call
                    allow  / block
                    before response returned
 ```
+
+## Streaming
+
+By default, streaming responses are buffered and sent to a `post_call` check as a single unit.  This permits ThirdLaw to evaluate the response as a whole before releasing any data to the client. If a "Block" decision is made, the client receives only an error response and no data is exposed.
+
+You may alter this behavior by setting `streaming_buffer_until_moderated` to `false`.  This permits response tokens to stream back to the client without moderation. ThirdLaw can still monitor and flag violations, but the "Block" policy will be ineffective as the client already has the data.
 
 ## Error Handling
 
