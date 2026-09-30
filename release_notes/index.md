@@ -10,11 +10,11 @@ LiteLLM ships new releases regularly with new provider support, performance impr
 
 ## Latest Release
 
-### [v1.97.0 — Tool-Result Guardrails, Deployment Affinity & Viewer Parity](/release_notes/v1.97.0/v1-97-0)
+### [v1.103.0: Config File Ownership, Fuse Routing & Gateway Hardening](/release_notes/v1.103.0/v1-103-0)
 
-_August 15, 2026_
+_September 27, 2026_
 
-A per-guardrail `scan_only_tool_results` flag that scans and masks tool output while system, user, and assistant content passes through untouched, so an agent platform can keep injection detection on untrusted tool results without its own harness prompts tripping the filter; auto-router `deployment_affinity` on by default, pinning a session to the deployment it used before so the provider prompt cache stays warm while every turn is still classified on its own merits; a new `LiteLLM_DailyGatewayRequests` table written by the ASGI request-metrics middleware, so successful and failed request counts survive spend logging being off and come with a by-endpoint breakdown; read parity for `proxy_admin_viewer` across roughly fifteen endpoints that previously compared against `PROXY_ADMIN` exactly; four caller-scoped `spend/report` endpoints for keys, users, teams, and organizations; a correctness sweep over managed files and batches covering deterministic unified output file ids and unparseable rows; and an admin-published, dismissible markdown banner rendered on every dashboard page. Note that request-parameter checks now apply to path and form inputs as well as the body.
+The config file now owns every setting it declares, with one precedence rule across the settings APIs, `source` and `editable` flags on both read endpoints, read-only fields in the Admin UI, and a startup warning for each stored value the file is ignoring. Auto Router adds a capability classifier, Fuse v2 forecasting, per-model Fast mode, maintained Fuse presets and TypeSafe JEV. Gateway hardening covers MCP client allowlisting, live session visibility, delegated OAuth admission, RFC 8693 token exchange and per-issuer JWT key scoping, and spend controls add per-member organization spend, additive project budgets, team-level `model_max_budget`, temporary budget increases and budgets re-checked on fallback targets, alongside 408 new model catalog entries. This stable also folds in prompt caching, streaming, JWT and proxy reliability fixes backported after the rc.1 cut, and reverts the rc.1 top-N key cap on the Usage pages. Review the release's Breaking Changes section before upgrading
 
 ---
 
@@ -22,6 +22,12 @@ A per-guardrail `scan_only_tool_results` flag that scans and masks tool output w
 
 | Version                             | Date         | Highlights                                                 |
 | ----------------------------------- | ------------ | ---------------------------------------------------------- |
+| [v1.103.0](/release_notes/v1.103.0/v1-103-0) | Sep 27, 2026 | Config file ownership, Fuse and Capability routing, gateway hardening |
+| [v1.102.0](/release_notes/v1.102.0/v1-102-0) | Sep 19, 2026 | Auto router controls, native OCR, gateway reliability |
+| [v1.101.0](/release_notes/v1.101.0/v1-101-0) | Sep 14, 2026 | Heuristic auto router, semantic MCP tool search, off-peak pricing |
+| [v1.100.0](/release_notes/v1.100.0/v1-100-0) | Sep 6, 2026  | Access group budgets, Together AI overhaul, custom auto-router tiers |
+| [v1.99.0](/release_notes/v1.99.0/v1-99-0)   | Sep 1, 2026  | Dark mode, CLI OAuth login, end-to-end batch billing       |
+| [v1.98.0](/release_notes/v1.98.0/v1-98-0)   | Aug 22, 2026 | Provisioned throughput billing, auto-router shadow evals, callable routing groups |
 | [v1.97.0](/release_notes/v1.97.0/v1-97-0)   | Aug 15, 2026 | Tool-result guardrails, auto-router deployment affinity, admin viewer parity |
 | [v1.96.0](/release_notes/v1.96.0/v1-96-0)   | Aug 9, 2026  | MCP entitlements, Redis config sync, auto-router context, GPT-5.6 price cut |
 | [v1.95.0](/release_notes/v1.95.0/v1-95-0)   | Aug 1, 2026  | Claude Opus 5, MCP gateway DCR, Rust `/v1/messages`, SAML 2.0 SSO |
