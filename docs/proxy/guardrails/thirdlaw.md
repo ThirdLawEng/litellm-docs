@@ -146,17 +146,12 @@ Parameters with environment-variable alternatives can be supplied either way. If
 | `api_base` | `os.environ/THIRDLAW_API_BASE` | ThirdLaw API base URL. |
 | `unreachable_fallback` | `fail_closed` | Controls behavior when ThirdLaw is unreachable because of a network failure, timeout, or HTTP `502`, `503`, or `504`. `fail_closed` blocks the request; `fail_open` allows it to continue. Other failures are raised regardless of this setting. |
 | `guardrail_timeout` | `60` | Time, in seconds, to wait for ThirdLaw. |
-| `additional_headers` | None | Comma-separated list of inbound headers whose raw values ThirdLaw should receive. Other inbound headers use LiteLLM's sanitized or redacted values. Do not include credential-bearing headers unless ThirdLaw requires them and you intend to expose their values to the ThirdLaw service. |
 
 ### Optional parameters
 
 | Parameter | Default | Description |
 | --- | --- | --- |
 | `streaming_buffer_until_moderated` | `true` | Holds streamed chunks until ThirdLaw moderates the assembled response, preventing flagged content from reaching the client before a block decision. |
-| `streaming_end_of_stream_only` | `true` | When `true`, evaluates the assembled response once after the stream ends. When `false`, also evaluates the accumulated response every Nth chunk, as specified by `streaming_sampling_rate`. Interim evaluations can block but cannot modify the response. |
-| `streaming_sampling_rate` | `5` | When `streaming_end_of_stream_only` is `false`, checks every Nth streamed chunk in addition to the final end-of-stream check. Interim checks can block but cannot modify content. Ignored when `streaming_end_of_stream_only` is `true`. |
-| `unscannable_stream_fallback` | `fail_closed` | Controls behavior when a streamed response cannot be assembled into a scannable format. `fail_closed` rejects the stream; `fail_open` forwards it without response moderation. `fail_open` lets a caller choose an unscannable format to bypass response moderation. |
-| `send_stream_chunks` | `false` | When `true`, sends ThirdLaw both the assembled provider response and the buffered stream. The buffered stream uses `response_chunks` for Chat Completions and `/v1/responses`, and `response_sse` for `/v1/messages`. |
 | `api_key` | `os.environ/THIRDLAW_API_KEY` | Optional ThirdLaw API key for deployments that require API-key authentication. |
 
 ## Actions by Hook
