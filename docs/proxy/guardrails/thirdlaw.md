@@ -204,6 +204,28 @@ Request → LiteLLM → ThirdLaw (pre_call) → allow/modify → Model
 Request → LiteLLM → ThirdLaw (pre_call) → block → Guardrail error → Caller
 ```
 
+### Streaming
+
+Streaming responses are checked on `post_call`. By default, LiteLLM buffers the stream and sends the assembled response to ThirdLaw before releasing anything to the client. If ThirdLaw allows the response, the original chunks are then streamed out; if it blocks, the client receives only the guardrail error and no model content. This is the safest configuration, but the caller waits for the full response to finish and be moderated before the first token arrives.
+
+If that latency is a problem, set `streaming_buffer_until_moderated: false`. Chunks then stream to the client as the model produces them and ThirdLaw checks the assembled response once at end of stream. A block at that point terminates the stream, but content already sent cannot be recalled. To catch violations earlier in long responses, also set `streaming_end_of_stream_only: false` so ThirdLaw checks every Nth chunk during the stream, where N is `streaming_sampling_rate`. Lower values catch violations sooner at the cost of more calls to ThirdLaw.
+
+```yaml
+guardrails:
+  - guardrail_name: "thirdlaw"
+    litellm_params:
+      guardrail: thirdlaw
+      mode: ["pre_call", "post_call"]
+      api_base: os.environ/THIRDLAW_API_BASE
+      api_key: os.environ/THIRDLAW_API_KEY
+      default_on: true
+      streaming_buffer_until_moderated: false   # stream chunks immediately
+      streaming_end_of_stream_only: false       # also check mid-stream
+      streaming_sampling_rate: 5                # every 5th chunk
+```
+
+Buffered streaming replays the original chunks unchanged on allow, so it enforces allow and block decisions; content modified by ThirdLaw is returned only on non-streaming responses.
+
 ### `during_call`
 
 Runs on the request in parallel with the model call. LiteLLM does not return the model response until the ThirdLaw check completes. If ThirdLaw blocks the request, LiteLLM returns the guardrail error instead of the model response. `MODIFY` cannot be applied on this hook because the model call is already running. Model tokens may still be consumed.
