@@ -44,7 +44,7 @@ guardrails:
     litellm_params:
       guardrail: thirdlaw
       mode: ["pre_call", "post_call"]
-      api_base: os.environ/THIRDLAW_API_BASE
+      api_base: https://guardrail.thirdlaw.acme.com
       default_on: true
       guardrail_timeout: 60
       additional_headers: "x-example-app"
