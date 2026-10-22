@@ -1,5 +1,6 @@
 ---
-title: "v1.102.2 - UI and CLI Session Token Format"
+title: "LiteLLM v1.103.1, v1.102.2, v1.101.3 and v1.100.4 fix UI and CLI session tokens"
+description: "Changes UI and CLI session tokens to AES-256-GCM tokens that start with litellm_login_. Admin UI and lite CLI users must log in again."
 slug: "v1-102-2"
 date: 2026-09-30T00:58:30
 authors:
@@ -50,6 +51,12 @@ This release is published as [`ghcr.io/berriai/litellm:v1.102.2`](https://github
 :::danger Breaking Changes
 
 **Session tokens issued before the upgrade stop working.** Admin UI and `lite` CLI users sign in once more after upgrading. During a rolling upgrade, pods on the old and new versions reject each other's session tokens, so finish the rollout before asking users to sign in again. Virtual keys, the master key and stored credentials are unaffected. See [`1d5fdc8`](https://github.com/BerriAI/litellm/commit/1d5fdc87fed66b49e1df8cf7d708ad93249eb7d0)
+
+:::
+
+:::warning `lite` CLI users must log in again
+
+After upgrading the proxy, every `lite` CLI user has to run `lite login` once more. Until they do, the CLI keeps sending its old session token and its requests to the proxy fail
 
 :::
 
